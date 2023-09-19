@@ -4,7 +4,7 @@
 
 # Easy Virtual Display
 
-Create virtual displays in Windows with ease, supporting a range of resolutions and refresh rates. Ideal for remote control or graphics card spoofing.
+Create virtual displays in Windows with ease, supporting a range of resolutions and refresh rates (such as 4K 240Hz). Ideal for remote control or graphics card spoofing.
 
 # Project Background
 
@@ -54,7 +54,7 @@ Unrestricted creation of virtual displays with various resolutions and refresh r
 
 # Easy Virtual Display（简易虚拟显示器）
 
-轻松在Windows中创建虚拟显示器，支持各种分辨率和刷新率。非常适用于远程控制或图形卡欺骗。
+轻松在Windows中创建虚拟显示器，支持各种分辨率和刷新率（如4k 244hz）。非常适用于远程控制或图形卡欺骗。
 
 # 项目背景
 
@@ -64,7 +64,7 @@ Unrestricted creation of virtual displays with various resolutions and refresh r
 
 请选择最新发布版本。
 
-# 使用方法
+# 使用方法（首次启动务必先安装驱动！！！首次启动务必先安装驱动！！！首次启动务必先安装驱动！！！）
 
 1. 下载并安装应用程序。建议创建快捷方式。
 
@@ -81,18 +81,18 @@ Unrestricted creation of virtual displays with various resolutions and refresh r
 ## 菜单项
 
 从上到下，菜单选项如下：启动虚拟显示器、停止虚拟显示器、强制退出、安装驱动、卸载驱动和退出。
-1. 启动虚拟显示器
-2. 停止虚拟显示器
-3. 强制退出
-4. 安装驱动
-5. 卸载驱动
-6. 退出
+1. 启动虚拟显示器：正常启动（首次运行前务必安装驱动）
+2. 停止虚拟显示器：正常停止
+3. 强制退出：某些情况下驱动可能会出现占用导致虚拟显示器启动不正常，此时可以先启用强制退出功能，确保驱动异常占用不是本程序导致的，然后卸载重装驱动或修复驱动
+4. 安装驱动：首次启动务必先安装驱动！！！首次启动务必先安装驱动！！！首次启动务必先安装驱动！！！
+5. 卸载驱动：卸载驱动
+6. 退出：退出程序
 
 # 玩法演示
 
 ## 隐私屏（远程控制/串流）
 
-启动虚拟显示器后，在显示设置中设置仅在显示器2（虚拟显示器）上显示，此时被控端（host）将黑屏，控制端（client）将正常显示被控端（host）的画面，允许你偷偷努力而不被其他人发现。
+启动虚拟显示器后，在显示设置中设置仅在显示器2（虚拟显示器）上显示，此时被控端（host）将黑屏，控制端（client）将正常显示被控端（host）的画面，允许你成为卷王而不被其他人发现。
 
 ## 摆脱物理显示器限制
 
