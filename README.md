@@ -36,3 +36,13 @@ From top to bottom, the menu options are as follows: Start Virtual Display, Stop
 4. Install Driver
 5. Uninstall Driver
 6. Exit
+
+# Demo
+
+## Privacy Screen (Remote Control/Streaming)
+
+Privacy Screen (Remote Control/Streaming): After starting the virtual display, configure it to display only on Display 2 (Virtual Display) in the display settings. This will cause the host machine's screen to go black while the client machine displays the host's screen, allowing you to work discreetly without being detected by others.
+
+## Overcoming Physical Display Limitations
+Unrestricted creation of virtual displays with various resolutions and refresh rates, allowing the client to output user-preferred resolutions and refresh rates (such as 4K 240Hz) on low-performance displays or systems without a physical display.
+
