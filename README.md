@@ -1,3 +1,7 @@
+[English](#english) | [中文](#中文)
+
+<a name="english"></a>
+
 # Easy Virtual Display
 
 Create virtual displays in Windows with ease, supporting a range of resolutions and refresh rates. Ideal for remote control or graphics card spoofing.
@@ -46,3 +50,50 @@ Privacy Screen (Remote Control/Streaming): After starting the virtual display, c
 ## Overcoming Physical Display Limitations
 Unrestricted creation of virtual displays with various resolutions and refresh rates, allowing the client to output user-preferred resolutions and refresh rates (such as 4K 240Hz) on low-performance displays or systems without a physical display.
 
+<a name="中文"></a>
+
+# Easy Virtual Display（简易虚拟显示器）
+
+轻松在Windows中创建虚拟显示器，支持各种分辨率和刷新率。非常适用于远程控制或图形卡欺骗。
+
+# 项目背景
+
+本项目基于ParsecVDD的基础构建，并利用了位于[https://github.com/nomi-san/parsec-vdd](https://github.com/nomi-san/parsec-vdd)的存储库。
+
+# 下载
+
+请选择最新发布版本。
+
+# 使用方法
+
+1. 下载并安装应用程序。建议创建快捷方式。
+
+![图片](https://github.com/KtzeAbyss/Easy-Virtual-Display/assets/46898226/e79caa33-480c-486e-b63e-f23abeeef3e3)
+
+![图片](https://github.com/KtzeAbyss/Easy-Virtual-Display/assets/46898226/4aff971b-b1ef-4aa4-a04d-43b09df850ea)
+
+2. 双击启动（virtualDisplayLit.exe），请确保以管理员模式运行。
+3. 该程序默认隐藏在右下角系统托盘中，右键单击图标即可访问功能菜单。首次运行时，请安装驱动程序（仅首次运行）。
+4. 然后，单击“启动虚拟显示器”以通过在桌面上右键单击来访问显示设置，就像配置物理显示器一样。
+
+![图片](https://github.com/KtzeAbyss/Easy-Virtual-Display/assets/46898226/3471d425-ae62-48b4-be8a-7c0106fb06b1)
+
+## 菜单项
+
+从上到下，菜单选项如下：启动虚拟显示器、停止虚拟显示器、强制退出、安装驱动、卸载驱动和退出。
+1. 启动虚拟显示器
+2. 停止虚拟显示器
+3. 强制退出
+4. 安装驱动
+5. 卸载驱动
+6. 退出
+
+# 玩法演示
+
+## 隐私屏（远程控制/串流）
+
+启动虚拟显示器后，在显示设置中设置仅在显示器2（虚拟显示器）上显示，此时被控端（host）将黑屏，控制端（client）将正常显示被控端（host）的画面，允许你偷偷努力而不被其他人发现。
+
+## 摆脱物理显示器限制
+
+无限制的创建各种分辨率和各种刷新率的虚拟显示器，允许被控端在低性能显示器或无显示器搭载的情况下，控制端输出用户喜好的分辨率和刷新率（如4K 240Hz）。
