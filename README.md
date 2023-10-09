@@ -97,3 +97,8 @@ Unrestricted creation of virtual displays with various resolutions and refresh r
 ## 摆脱物理显示器限制
 
 无限制的创建各种分辨率和各种刷新率的虚拟显示器，允许被控端在低性能显示器或无显示器搭载的情况下，控制端输出用户喜好的分辨率和刷新率（如4K 240Hz）。
+
+# Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=KtzeAbyss/Easy-Virtual-Display&type=Date)](https://star-history.com/#KtzeAbyss/Easy-Virtual-Display&Date)
+
