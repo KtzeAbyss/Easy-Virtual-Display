@@ -1,3 +1,12 @@
+> [!NOTE]
+> The core feature, the parsec-vdd project, is about to receive a major update. Please help the parsec-vdd project reach 200 stars！
+> 
+> where find it？ 👉👉👉https://github.com/nomi-san/parsec-vdd
+>
+> 核心功能parsec-vdd项目即将迎来重大更新，请协助项目获得200 stars！
+>
+> 项目地址 👉👉👉https://github.com/nomi-san/parsec-vdd
+
 [English](#english) | [中文](#中文)
 
 <a name="english"></a>
