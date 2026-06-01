@@ -1,0 +1,25 @@
+{
+  "tray": {
+    "show": "显示",
+    "add_display": "添加显示器",
+    "remove_last_display": "移除最后一个显示器",
+    "keep_screen_on": "保持屏幕常亮",
+    "launch_on_login": "开机自启",
+    "quit": "退出",
+    "tooltip_active": "Easy Virtual Display（{{count}} 个活动）",
+    "tooltip_inactive": "Easy Virtual Display",
+    "quit_title": "退出 Easy Virtual Display",
+    "quit_message": "仍有虚拟显示器处于活动状态。",
+    "quit_detail": "退出将移除 {{count}} 个活动的虚拟显示器。",
+    "quit_detail_plural": "退出将移除 {{count}} 个活动的虚拟显示器。",
+    "quit_button": "移除显示器并退出",
+    "cancel": "取消"
+  },
+  "common": {
+    "cancel": "取消",
+    "install_driver_action": "安装驱动",
+    "install_driver_title": "安装虚拟显示驱动",
+    "install_driver_message": "尚未安装 Parsec 虚拟显示驱动。",
+    "install_driver_detail": "现在安装随应用附带的驱动，以启用虚拟显示管理。"
+  }
+}

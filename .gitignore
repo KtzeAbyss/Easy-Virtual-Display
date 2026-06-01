@@ -1,0 +1,47 @@
+node_modules/
+dist/
+coverage/
+tmp/*
+!tmp/.gitkeep
+
+# C#/.NET build outputs
+native/**/bin/
+native/**/obj/
+TestResults/
+
+# Visual Studio
+.vs/
+.idea/
+*.user
+*.rsuser
+*.suo
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Security / signing material
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Cache
+.cache/
+.eslintcache
+*.tsbuildinfo
+*.log*
+
+# Merge / patch backups
+*.orig
+
+# Bundled third-party driver payloads
+vendor/parsec-vdd/*
+!vendor/parsec-vdd/.gitkeep

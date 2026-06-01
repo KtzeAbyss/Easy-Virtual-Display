@@ -1,0 +1,59 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "EasyVirtualDisplay",
+  "version": "0.1.1",
+  "identifier": "com.easyvirtualdisplay.desktop",
+  "mainBinaryName": "EasyVirtualDisplay",
+  "build": {
+    "beforeDevCommand": "npm run dev:web",
+    "beforeBuildCommand": "npm run build:native && npm run build:web",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist/renderer"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Easy Virtual Display",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 1100,
+        "minHeight": 720,
+        "visible": true,
+        "decorations": false,
+        "skipTaskbar": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../native/EasyVirtualDisplay.Host/bin/publish/": "native",
+      "../vendor/parsec-vdd/": "vendor/parsec-vdd",
+      "../resources/icon.png": "resources/icon.png"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "windows/header.bmp",
+        "sidebarImage": "windows/sidebar.bmp",
+        "languages": ["English", "SimpChinese", "TradChinese"],
+        "installerHooks": "windows/hooks.nsh"
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "tray": {
+    "show": "Show",
+    "add_display": "Add Display",
+    "remove_last_display": "Remove Last Display",
+    "keep_screen_on": "Keep Screen On",
+    "launch_on_login": "Launch on Login",
+    "quit": "Quit",
+    "tooltip_active": "Easy Virtual Display ({{count}} active)",
+    "tooltip_inactive": "Easy Virtual Display",
+    "quit_title": "Quit Easy Virtual Display",
+    "quit_message": "Virtual displays are still active.",
+    "quit_detail": "Quitting now will remove {{count}} active virtual display before exit.",
+    "quit_detail_plural": "Quitting now will remove {{count}} active virtual displays before exit.",
+    "quit_button": "Remove Displays and Quit",
+    "cancel": "Cancel"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "install_driver_action": "Install Driver",
+    "install_driver_title": "Install Virtual Display Driver",
+    "install_driver_message": "The Parsec virtual display driver is not installed.",
+    "install_driver_detail": "Install the bundled driver now to enable virtual display management."
+  }
+}

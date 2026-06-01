@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window. The front-end invokes 11 custom commands, listens for 2 custom events, reads window state via core:window:default, and drives the custom title-bar via 4 core:window action commands (start-dragging / minimize / toggle-maximize / close). Other plugin commands (dialog/store/autostart/opener/single-instance) are invoked exclusively from Rust, so they need no front-end permissions.",
+  "windows": ["main"],
+  "permissions": [
+    "core:event:default",
+    "core:window:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close"
+  ]
+}

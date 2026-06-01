@@ -1,0 +1,65 @@
+{
+  "name": "easyvirtualdisplay.app",
+  "version": "0.1.1",
+  "description": "Easy Virtual Display desktop shell",
+  "author": "EasyVirtualDisplay",
+  "homepage": "https://github.com/KtzeAbyss/Easy-Virtual-Display",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KtzeAbyss/Easy-Virtual-Display.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KtzeAbyss/Easy-Virtual-Display/issues"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "test": "vitest run",
+    "build:native": "dotnet publish native/EasyVirtualDisplay.Host/EasyVirtualDisplay.Host.csproj -c Release -r win-x64 --self-contained false -o native/EasyVirtualDisplay.Host/bin/publish",
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "npm run build:native && tauri build"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.5",
+    "@tanstack/react-query": "^5.74.4",
+    "@tauri-apps/api": "^2.11.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "i18next": "^24.2.2",
+    "lucide-react": "^0.511.0",
+    "react-hook-form": "^7.56.0",
+    "react-i18next": "^15.4.1",
+    "sonner": "^2.0.3",
+    "tailwind-merge": "^3.3.0",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.5",
+    "@tauri-apps/cli": "^2.11.2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.19.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.7.4",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "tailwindcss": "^4.1.5",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6",
+    "vitest": "^3.1.1"
+  }
+}
