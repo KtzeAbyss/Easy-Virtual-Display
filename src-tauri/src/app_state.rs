@@ -33,6 +33,9 @@ pub struct AppRuntime {
 struct PublishedHost {
     session_id: u64,
     snapshot: HostSnapshot,
+    /// Stamp of the last composed [`AppSnapshot`]. Command replies and events reach the
+    /// renderer over separate channels, so it keeps whichever copy carries the higher stamp.
+    seq: u64,
 }
 
 impl PublishedHost {
@@ -70,6 +73,7 @@ impl AppRuntime {
             published_host: Mutex::new(PublishedHost {
                 session_id: 0,
                 snapshot: empty_host_snapshot(),
+                seq: 0,
             }),
         }
     }
@@ -82,8 +86,21 @@ impl AppRuntime {
         *self.effective_language.lock().expect("language poisoned")
     }
 
-    pub fn compose_app_snapshot(&self, host: HostSnapshot) -> AppSnapshot {
-        self.compose_snapshot(host)
+    /// Latest host state as published to every consumer — the same state viewer reaping
+    /// and the renderer work from, not the backend's possibly newer cache.
+    pub fn published_host(&self) -> HostSnapshot {
+        self.published_host
+            .lock()
+            .expect("published host poisoned")
+            .snapshot
+            .clone()
+    }
+
+    /// Compose the current app snapshot for a command reply, stamped in the same order
+    /// as emitted snapshots.
+    pub fn current_snapshot(&self) -> AppSnapshot {
+        let mut published = self.published_host.lock().expect("published host poisoned");
+        self.compose_snapshot(&mut published)
     }
 
     /// Publish a host-driven snapshot in sidecar-session order. Older callbacks are
@@ -108,7 +125,7 @@ impl AppRuntime {
             .collect();
         self.viewers.retain(&alive);
 
-        let snapshot = self.compose_snapshot(published.snapshot.clone());
+        let snapshot = self.compose_snapshot(&mut published);
         crate::events::emit_snapshot(app, &snapshot);
         Some(snapshot)
     }
@@ -116,15 +133,18 @@ impl AppRuntime {
     /// Re-emit the latest accepted host state with current settings and viewer indices.
     /// The same lock as host publication keeps full snapshots in emission order.
     pub fn republish_snapshot<R: Runtime>(&self, app: &AppHandle<R>) -> AppSnapshot {
-        let published = self.published_host.lock().expect("published host poisoned");
-        let snapshot = self.compose_snapshot(published.snapshot.clone());
+        let mut published = self.published_host.lock().expect("published host poisoned");
+        let snapshot = self.compose_snapshot(&mut published);
         crate::events::emit_snapshot(app, &snapshot);
         snapshot
     }
 
-    fn compose_snapshot(&self, host: HostSnapshot) -> AppSnapshot {
+    /// Callers hold the `published_host` lock, so stamps follow composition order.
+    fn compose_snapshot(&self, published: &mut PublishedHost) -> AppSnapshot {
+        published.seq += 1;
         AppSnapshot {
-            host,
+            seq: published.seq,
+            host: published.snapshot.clone(),
             settings: self.settings_snapshot(),
             effective_language: self.effective_language(),
             open_viewers: self.viewers.open_indices(),
@@ -246,14 +266,23 @@ mod tests {
     }
 
     #[test]
-    fn compose_app_snapshot_includes_current_runtime_fields() {
+    fn current_snapshot_includes_published_host_and_runtime_fields() {
         let rt = build_runtime();
         let mut host = empty_host_snapshot();
         host.revision = 42;
-        let snap = rt.compose_app_snapshot(host);
+        assert!(rt.published_host.lock().unwrap().accept(1, host));
+        let snap = rt.current_snapshot();
         assert_eq!(snap.host.revision, 42);
         assert_eq!(snap.effective_language, EffectiveLanguage::En);
         assert_eq!(snap.settings.language, AppLanguage::System);
+    }
+
+    #[test]
+    fn composed_snapshots_are_stamped_in_order() {
+        let rt = build_runtime();
+        let first = rt.current_snapshot();
+        let second = rt.current_snapshot();
+        assert!(second.seq > first.seq);
     }
 
     #[test]
@@ -261,6 +290,7 @@ mod tests {
         let mut published = PublishedHost {
             session_id: 1,
             snapshot: empty_host_snapshot(),
+            seq: 0,
         };
         let mut revision_two = empty_host_snapshot();
         revision_two.revision = 2;

@@ -115,6 +115,8 @@ pub struct AppSettings {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSnapshot {
+    /// Monotonic composition stamp; the renderer ignores copies older than the one it has.
+    pub seq: u64,
     pub host: HostSnapshot,
     pub settings: AppSettings,
     pub effective_language: EffectiveLanguage,
@@ -202,6 +204,7 @@ pub fn empty_host_snapshot() -> HostSnapshot {
 
 pub fn empty_app_snapshot() -> AppSnapshot {
     AppSnapshot {
+        seq: 0,
         host: empty_host_snapshot(),
         settings: default_app_settings(),
         effective_language: EffectiveLanguage::En,

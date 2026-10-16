@@ -78,6 +78,8 @@ export interface AppSettings {
 }
 
 export interface AppSnapshot {
+  /** Monotonic composition stamp; a copy older than the one already held is stale. */
+  seq: number
   host: HostSnapshot
   settings: AppSettings
   effectiveLanguage: EffectiveLanguage
@@ -106,6 +108,7 @@ export const EMPTY_HOST_SNAPSHOT: HostSnapshot = {
 }
 
 export const EMPTY_APP_SNAPSHOT: AppSnapshot = {
+  seq: 0,
   host: EMPTY_HOST_SNAPSHOT,
   settings: DEFAULT_APP_SETTINGS,
   effectiveLanguage: 'en',
