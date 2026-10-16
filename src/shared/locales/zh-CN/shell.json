@@ -21,5 +21,10 @@
     "install_driver_title": "安装虚拟显示驱动",
     "install_driver_message": "尚未安装 Parsec 虚拟显示驱动。",
     "install_driver_detail": "现在安装随应用附带的驱动，以启用虚拟显示管理。"
+  },
+  "viewer": {
+    "title": "虚拟显示器 #{{index}}",
+    "hint_idle": "点击以接管鼠标键盘",
+    "hint_grabbed": "按 {{hotkey}} 释放鼠标键盘（无效时按 Ctrl+Alt+Del 再按 Esc）"
   }
 }

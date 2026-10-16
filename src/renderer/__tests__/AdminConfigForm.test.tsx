@@ -25,7 +25,8 @@ const makeSnapshot = (hostOverrides: Partial<AppSnapshot['host']> = {}): AppSnap
     theme: 'system',
     language: 'system'
   },
-  effectiveLanguage: 'en'
+  effectiveLanguage: 'en',
+  openViewers: []
 })
 
 describe('SettingsPanel (Advanced section)', () => {

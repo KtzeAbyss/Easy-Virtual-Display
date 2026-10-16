@@ -65,6 +65,8 @@ export function createTauriBridge(): EasyVirtualDisplayBridge {
       invoke<void>('apply_admin_config', { input }),
     updateSettings: (patch: Partial<AppSettings>) => invoke<void>('update_settings', { patch }),
     openDisplaySettings: () => invoke<void>('open_display_settings'),
-    showMainWindow: () => invoke<void>('show_main_window')
+    showMainWindow: () => invoke<void>('show_main_window'),
+    openDisplayViewer: (index: number) => invoke<void>('open_display_viewer', { index }),
+    closeDisplayViewer: (index: number) => invoke<void>('close_display_viewer', { index })
   }
 }

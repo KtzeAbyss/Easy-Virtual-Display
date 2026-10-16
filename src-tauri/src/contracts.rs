@@ -118,6 +118,8 @@ pub struct AppSnapshot {
     pub host: HostSnapshot,
     pub settings: AppSettings,
     pub effective_language: EffectiveLanguage,
+    /// Display indices that currently have a mirror window open.
+    pub open_viewers: Vec<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -203,6 +205,7 @@ pub fn empty_app_snapshot() -> AppSnapshot {
         host: empty_host_snapshot(),
         settings: default_app_settings(),
         effective_language: EffectiveLanguage::En,
+        open_viewers: Vec::new(),
     }
 }
 

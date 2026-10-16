@@ -4,11 +4,12 @@ import { useBridgeCommand } from '../hooks/useBridgeCommand'
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, Monitor, Trash2 } from 'lucide-react'
+import { AlertTriangle, Monitor, MonitorPlay, MonitorX, Trash2 } from 'lucide-react'
 
 interface DisplayCardProps {
   display: DisplaySummary
   driverOk: boolean
+  viewerOpen: boolean
 }
 
 const ORIENTATION_KEYS: Record<Orientation, string> = {
@@ -42,14 +43,46 @@ function getModeSummary(
   return `${display.currentMode.width}×${display.currentMode.height} @ ${t('displays:hz', { value: display.currentMode.hz })} · ${t(ORIENTATION_KEYS[display.currentOrientation])}`
 }
 
+function ViewerToggle({
+  viewerOpen,
+  isDisabled,
+  onToggle
+}: {
+  viewerOpen: boolean
+  isDisabled: boolean
+  onToggle: () => void
+}): React.JSX.Element {
+  const { t } = useTranslation()
+  const label = t(viewerOpen ? 'displays:close_viewer' : 'displays:open_viewer')
+  return (
+    <Button
+      variant={viewerOpen ? 'secondary' : 'ghost'}
+      size="sm"
+      className="h-7 text-xs gap-1.5"
+      onClick={onToggle}
+      disabled={isDisabled}
+      title={t('displays:viewer_hint')}
+    >
+      {viewerOpen ? <MonitorX className="w-3.5 h-3.5" /> : <MonitorPlay className="w-3.5 h-3.5" />}
+      {label}
+    </Button>
+  )
+}
+
 function DisplayCardHeader({
   display,
   isDisabled,
-  onRemove
+  viewerOpen,
+  viewerDisabled,
+  onRemove,
+  onToggleViewer
 }: {
   display: DisplaySummary
   isDisabled: boolean
+  viewerOpen: boolean
+  viewerDisabled: boolean
   onRemove: () => void
+  onToggleViewer: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   const modeSummary = getModeSummary(display, t)
@@ -80,16 +113,23 @@ function DisplayCardHeader({
           )}
         </div>
       </div>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="h-7 w-7 text-muted-foreground hover:text-destructive-foreground hover:bg-destructive/10"
-        onClick={onRemove}
-        disabled={isDisabled}
-        aria-label={t('common:remove')}
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </Button>
+      <div className="flex items-center gap-1">
+        <ViewerToggle
+          viewerOpen={viewerOpen}
+          isDisabled={viewerDisabled}
+          onToggle={onToggleViewer}
+        />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive-foreground hover:bg-destructive/10"
+          onClick={onRemove}
+          disabled={isDisabled}
+          aria-label={t('common:remove')}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
     </div>
   )
 }
@@ -192,7 +232,11 @@ function OrientationField({
   )
 }
 
-export function DisplayCard({ display, driverOk }: DisplayCardProps): React.JSX.Element {
+export function DisplayCard({
+  display,
+  driverOk,
+  viewerOpen
+}: DisplayCardProps): React.JSX.Element {
   const { currentResKey, availableHz, currentHz } = useDisplayCardModel(display)
   const setMode = useBridgeCommand(
     (input: Parameters<typeof window.easyVirtualDisplay.setDisplayMode>[0]) =>
@@ -201,7 +245,12 @@ export function DisplayCard({ display, driverOk }: DisplayCardProps): React.JSX.
   const removeDisplay = useBridgeCommand((index: number) =>
     window.easyVirtualDisplay.removeDisplay(index)
   )
-  const busy = setMode.isPending || removeDisplay.isPending
+  const toggleViewer = useBridgeCommand((open: boolean) =>
+    open
+      ? window.easyVirtualDisplay.openDisplayViewer(display.index)
+      : window.easyVirtualDisplay.closeDisplayViewer(display.index)
+  )
+  const busy = setMode.isPending || removeDisplay.isPending || toggleViewer.isPending
   const isDisabled = !driverOk || busy
 
   const handleResolutionChange = (val: string): void => {
@@ -214,15 +263,23 @@ export function DisplayCard({ display, driverOk }: DisplayCardProps): React.JSX.
 
   return (
     <div
+      // Every control below carries its own `disabled`, so the card only dims. A blanket
+      // `pointer-events-none` would also swallow clicks on "Close view", stranding an
+      // already-open mirror window whenever the driver faults.
       className={cn(
         'bg-card border border-border rounded-lg overflow-hidden transition-opacity',
-        isDisabled && 'opacity-60 pointer-events-none'
+        isDisabled && 'opacity-60'
       )}
     >
       <DisplayCardHeader
         display={display}
         isDisabled={isDisabled}
+        viewerOpen={viewerOpen}
+        // Opening needs an active display and a healthy driver; closing must stay
+        // available for as long as a window is open.
+        viewerDisabled={viewerOpen ? toggleViewer.isPending : isDisabled || !display.active}
         onRemove={() => removeDisplay.mutate(display.index)}
+        onToggleViewer={() => toggleViewer.mutate(!viewerOpen)}
       />
       <div className="h-px bg-border mx-4" />
       <div className="grid grid-cols-3 gap-3 px-4 py-3">

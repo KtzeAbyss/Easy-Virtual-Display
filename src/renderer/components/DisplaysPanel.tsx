@@ -94,15 +94,22 @@ function DisplaysEmptyState({ allDisabled, addDisplay }: EmptyStateProps): React
 
 function DisplaysList({
   displays,
-  driverOk
+  driverOk,
+  openViewers
 }: {
   displays: DisplaySummary[]
   driverOk: boolean
+  openViewers: number[]
 }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-2">
       {displays.map((display) => (
-        <DisplayCard key={display.identifier} display={display} driverOk={driverOk} />
+        <DisplayCard
+          key={display.identifier}
+          display={display}
+          driverOk={driverOk}
+          viewerOpen={openViewers.includes(display.index)}
+        />
       ))}
     </div>
   )
@@ -128,7 +135,9 @@ export function DisplaysPanel({ snapshot }: DisplaysPanelProps): React.JSX.Eleme
         removeAll={removeAll}
       />
       {!hasDisplays && <DisplaysEmptyState allDisabled={allDisabled} addDisplay={addDisplay} />}
-      {hasDisplays && <DisplaysList displays={displays} driverOk={driverOk} />}
+      {hasDisplays && (
+        <DisplaysList displays={displays} driverOk={driverOk} openViewers={snapshot.openViewers} />
+      )}
     </div>
   )
 }

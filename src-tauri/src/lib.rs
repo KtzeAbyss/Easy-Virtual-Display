@@ -12,6 +12,7 @@ mod quit;
 mod settings_store;
 mod shell_locales;
 mod tray;
+mod viewer;
 
 pub use app_state::AppRuntime;
 pub use contracts::*;
@@ -56,6 +57,8 @@ pub fn run() {
             commands::apply_admin_config,
             commands::open_display_settings,
             commands::show_main_window,
+            commands::open_display_viewer,
+            commands::close_display_viewer,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
@@ -70,6 +73,17 @@ pub fn run() {
             let backend = StdioJsonRpcBackend::new(command_factory, empty_host_snapshot());
             let boundaries = boundaries::SystemBoundaries::new(app_handle.clone(), backend.clone());
 
+            // Viewer windows live outside the snapshot pipeline (the user can close one
+            // directly), so re-broadcast the composed snapshot whenever the open set
+            // changes — the renderer then flips its toggles without a second channel.
+            let viewer_handle = app_handle.clone();
+            let viewers = viewer::create(Arc::new(move || {
+                let Some(runtime) = viewer_handle.try_state::<AppRuntime>() else {
+                    return;
+                };
+                runtime.republish_snapshot(&viewer_handle);
+            }));
+
             // Apply persisted launch-on-login + keep-screen-on at boot. fallback_display
             // is snapshot-driven (handled below by the broadcaster) so we don't fire it here.
             boundaries.sync_settings(&settings);
@@ -78,15 +92,19 @@ pub fn run() {
             // renderer via `snapshot-changed`, (b) the tray (tooltip + checkboxes), and
             // (c) the fallback-display boundary (which may schedule a debounced add).
             let broadcaster_handle = app_handle.clone();
-            backend.set_snapshot_broadcaster(Arc::new(move |host: &HostSnapshot| {
+            backend.set_snapshot_broadcaster(Arc::new(move |session_id, host: &HostSnapshot| {
                 let Some(runtime) = broadcaster_handle.try_state::<AppRuntime>() else {
                     return;
                 };
-                let snapshot = runtime.compose_app_snapshot(host.clone());
-                events::emit_snapshot(&broadcaster_handle, &snapshot);
+
+                let Some(snapshot) =
+                    runtime.publish_host_snapshot(&broadcaster_handle, session_id, host.clone())
+                else {
+                    return;
+                };
                 tray::refresh(&snapshot);
 
-                let host_clone = host.clone();
+                let host_clone = snapshot.host.clone();
                 let settings = snapshot.settings.clone();
                 let handle = broadcaster_handle.clone();
                 tauri::async_runtime::spawn(async move {
@@ -106,7 +124,14 @@ pub fn run() {
             }));
 
             let elevator = elevator::create();
-            let runtime = AppRuntime::new(backend, boundaries, elevator, settings, system_locale);
+            let runtime = AppRuntime::new(
+                backend,
+                boundaries,
+                elevator,
+                viewers,
+                settings,
+                system_locale,
+            );
             app.manage(runtime);
 
             tray::setup(&app_handle)?;

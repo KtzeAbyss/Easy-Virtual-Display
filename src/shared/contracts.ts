@@ -81,6 +81,8 @@ export interface AppSnapshot {
   host: HostSnapshot
   settings: AppSettings
   effectiveLanguage: EffectiveLanguage
+  /** Display indices that currently have a mirror window open. */
+  openViewers: number[]
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -106,5 +108,6 @@ export const EMPTY_HOST_SNAPSHOT: HostSnapshot = {
 export const EMPTY_APP_SNAPSHOT: AppSnapshot = {
   host: EMPTY_HOST_SNAPSHOT,
   settings: DEFAULT_APP_SETTINGS,
-  effectiveLanguage: 'en'
+  effectiveLanguage: 'en',
+  openViewers: []
 }

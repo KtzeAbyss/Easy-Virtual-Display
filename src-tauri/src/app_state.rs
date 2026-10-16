@@ -7,21 +7,45 @@
 
 use std::sync::{Arc, Mutex};
 
+use tauri::{AppHandle, Runtime};
+
 use crate::boundaries::SystemBoundaries;
 use crate::contracts::{
-    resolve_effective_language, AppSettings, AppSnapshot, EffectiveLanguage, HostSnapshot,
+    empty_host_snapshot, resolve_effective_language, AppSettings, AppSnapshot, EffectiveLanguage,
+    HostSnapshot,
 };
 use crate::elevator::Elevator;
 use crate::host::StdioJsonRpcBackend;
+use crate::viewer::ViewerHost;
 
 pub struct AppRuntime {
     pub backend: Arc<StdioJsonRpcBackend>,
     pub boundaries: SystemBoundaries,
     pub elevator: Arc<dyn Elevator>,
+    pub viewers: Arc<dyn ViewerHost>,
     pub system_locale: String,
     settings: Mutex<AppSettings>,
     effective_language: Mutex<EffectiveLanguage>,
     install_prompt_shown: Mutex<bool>,
+    published_host: Mutex<PublishedHost>,
+}
+
+struct PublishedHost {
+    session_id: u64,
+    snapshot: HostSnapshot,
+}
+
+impl PublishedHost {
+    fn accept(&mut self, session_id: u64, snapshot: HostSnapshot) -> bool {
+        if session_id < self.session_id
+            || (session_id == self.session_id && snapshot.revision <= self.snapshot.revision)
+        {
+            return false;
+        }
+        self.session_id = session_id;
+        self.snapshot = snapshot;
+        true
+    }
 }
 
 impl AppRuntime {
@@ -29,6 +53,7 @@ impl AppRuntime {
         backend: Arc<StdioJsonRpcBackend>,
         boundaries: SystemBoundaries,
         elevator: Arc<dyn Elevator>,
+        viewers: Arc<dyn ViewerHost>,
         settings: AppSettings,
         system_locale: String,
     ) -> Self {
@@ -37,10 +62,15 @@ impl AppRuntime {
             backend,
             boundaries,
             elevator,
+            viewers,
             system_locale,
             settings: Mutex::new(settings),
             effective_language: Mutex::new(effective_language),
             install_prompt_shown: Mutex::new(false),
+            published_host: Mutex::new(PublishedHost {
+                session_id: 0,
+                snapshot: empty_host_snapshot(),
+            }),
         }
     }
 
@@ -53,10 +83,51 @@ impl AppRuntime {
     }
 
     pub fn compose_app_snapshot(&self, host: HostSnapshot) -> AppSnapshot {
+        self.compose_snapshot(host)
+    }
+
+    /// Publish a host-driven snapshot in sidecar-session order. Older callbacks are
+    /// discarded before they can reap viewers or overwrite renderer state.
+    pub fn publish_host_snapshot<R: Runtime>(
+        &self,
+        app: &AppHandle<R>,
+        session_id: u64,
+        host: HostSnapshot,
+    ) -> Option<AppSnapshot> {
+        let mut published = self.published_host.lock().expect("published host poisoned");
+        if !published.accept(session_id, host) {
+            return None;
+        }
+
+        let alive: Vec<i32> = published
+            .snapshot
+            .displays
+            .iter()
+            .filter(|display| display.active)
+            .map(|display| display.index)
+            .collect();
+        self.viewers.retain(&alive);
+
+        let snapshot = self.compose_snapshot(published.snapshot.clone());
+        crate::events::emit_snapshot(app, &snapshot);
+        Some(snapshot)
+    }
+
+    /// Re-emit the latest accepted host state with current settings and viewer indices.
+    /// The same lock as host publication keeps full snapshots in emission order.
+    pub fn republish_snapshot<R: Runtime>(&self, app: &AppHandle<R>) -> AppSnapshot {
+        let published = self.published_host.lock().expect("published host poisoned");
+        let snapshot = self.compose_snapshot(published.snapshot.clone());
+        crate::events::emit_snapshot(app, &snapshot);
+        snapshot
+    }
+
+    fn compose_snapshot(&self, host: HostSnapshot) -> AppSnapshot {
         AppSnapshot {
             host,
             settings: self.settings_snapshot(),
             effective_language: self.effective_language(),
+            open_viewers: self.viewers.open_indices(),
         }
     }
 
@@ -137,6 +208,7 @@ mod tests {
             backend,
             SystemBoundaries::noop_for_tests(),
             crate::elevator::create(),
+            crate::viewer::create(std::sync::Arc::new(|| {})),
             default_app_settings(),
             "en-US".into(),
         )
@@ -182,5 +254,23 @@ mod tests {
         assert_eq!(snap.host.revision, 42);
         assert_eq!(snap.effective_language, EffectiveLanguage::En);
         assert_eq!(snap.settings.language, AppLanguage::System);
+    }
+
+    #[test]
+    fn published_host_orders_revisions_within_each_session() {
+        let mut published = PublishedHost {
+            session_id: 1,
+            snapshot: empty_host_snapshot(),
+        };
+        let mut revision_two = empty_host_snapshot();
+        revision_two.revision = 2;
+        let mut stale = empty_host_snapshot();
+        stale.revision = 1;
+
+        assert!(published.accept(1, revision_two));
+        assert!(!published.accept(1, stale.clone()));
+        assert_eq!(published.snapshot.revision, 2);
+        assert!(published.accept(2, stale));
+        assert_eq!(published.snapshot.revision, 1);
     }
 }

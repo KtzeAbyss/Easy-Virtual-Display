@@ -14,7 +14,9 @@ function sortedKeys(o: Record<string, unknown>): string[] {
   return Object.keys(o).sort()
 }
 
-const SHELL_NAMESPACES = ['tray', 'common'] as const
+// `viewer` has no TS adapter: those captions are drawn by the native viewer windows in
+// src-tauri/src/viewer, so shell.json is their only consumer.
+const SHELL_NAMESPACES = ['tray', 'common', 'viewer'] as const
 
 describe('shell.json locale parity', () => {
   test('en and zh-CN expose the same shell namespaces', () => {
@@ -93,6 +95,19 @@ describe('shell.json locale parity', () => {
     for (const k of requiredCommon) {
       expect(enShell.common, `en/shell.common.${k}`).toHaveProperty(k)
       expect(zhShell.common, `zh/shell.common.${k}`).toHaveProperty(k)
+    }
+
+    // Keys referenced by src-tauri/src/commands.rs and src-tauri/src/viewer/win/window.rs.
+    for (const k of ['title', 'hint_idle', 'hint_grabbed']) {
+      expect(enShell.viewer, `en/shell.viewer.${k}`).toHaveProperty(k)
+      expect(zhShell.viewer, `zh/shell.viewer.${k}`).toHaveProperty(k)
+    }
+  })
+
+  test('viewer captions keep the placeholders the Rust shell substitutes', () => {
+    for (const shell of [enShell, zhShell]) {
+      expect(shell.viewer.title).toContain('{{index}}')
+      expect(shell.viewer.hint_grabbed).toContain('{{hotkey}}')
     }
   })
 })

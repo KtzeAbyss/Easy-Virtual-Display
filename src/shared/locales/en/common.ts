@@ -34,6 +34,8 @@ export default {
       'Microsoft .NET 8 Runtime (x64) is required to start the bundled native host',
     native_host_unavailable: 'Native host is unavailable',
     config_apply_timeout:
-      'Configuration submitted but not yet confirmed — the change should take effect shortly'
+      'Configuration submitted but not yet confirmed — the change should take effect shortly',
+    viewer_unsupported: 'Mirroring a display into a window is only supported on Windows',
+    viewer_start_failed: 'Could not open the display viewer window'
   }
 }

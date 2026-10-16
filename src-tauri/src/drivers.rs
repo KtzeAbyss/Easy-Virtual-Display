@@ -15,7 +15,6 @@ use crate::errors::{
     is_user_cancelled_elevation, parse_serialized_error, EasyVirtualDisplayError,
     EasyVirtualDisplayErrorCode,
 };
-use crate::events;
 use crate::host::{
     resolve_admin_command, resolve_install_driver_command, resolve_uninstall_driver_command,
     HostCommand,
@@ -85,9 +84,7 @@ pub async fn apply_admin_config(
 
     wait_for_config_snapshot(runtime, &input).await?;
 
-    let host = runtime.backend.get_snapshot().await?;
-    let snap = runtime.compose_app_snapshot(host.clone());
-    events::emit_snapshot(app, &snap);
+    let snap = runtime.republish_snapshot(app);
     tray::refresh(&snap);
     Ok(())
 }
@@ -99,23 +96,26 @@ async fn post_driver_change(
     runtime: &AppRuntime,
     just_installed: bool,
 ) -> Result<(), EasyVirtualDisplayError> {
+    // `start()` synchronously broadcasts its initial snapshot, which schedules the
+    // install prompt. An explicit uninstall must close that gate before the broadcast.
+    if !just_installed {
+        runtime.set_install_prompt_shown(true);
+    }
+
     runtime.backend.stop().await?;
     runtime.backend.start().await?;
-    let host = runtime.backend.get_snapshot().await?;
+    let snap = runtime.republish_snapshot(app);
 
-    runtime.set_install_prompt_shown(if just_installed {
-        host.status != crate::contracts::DriverStatus::NotInstalled
-    } else {
-        true
-    });
+    if just_installed {
+        runtime.set_install_prompt_shown(
+            snap.host.status != crate::contracts::DriverStatus::NotInstalled,
+        );
+    }
 
     let settings = runtime.settings_snapshot();
     runtime.boundaries.sync_settings(&settings);
-
-    let snap = runtime.compose_app_snapshot(host.clone());
-    events::emit_snapshot(app, &snap);
     tray::refresh(&snap);
-    runtime.boundaries.handle_snapshot(&host, &settings).await;
+    runtime.boundaries.handle_snapshot(&snap.host, &settings).await;
     Ok(())
 }
 

@@ -32,6 +32,8 @@ export default {
     driver_uninstall_not_installed: '未检测到已安装的虚拟显示驱动，无需卸载',
     dotnet_runtime_missing: '缺少 Microsoft .NET 8 Runtime (x64)，无法启动随应用附带的原生服务',
     native_host_unavailable: '原生服务不可用',
-    config_apply_timeout: '配置已提交但尚未确认生效 — 变更应会稍后生效'
+    config_apply_timeout: '配置已提交但尚未确认生效 — 变更应会稍后生效',
+    viewer_unsupported: '仅 Windows 支持将显示器画面镜像到窗口',
+    viewer_start_failed: '无法打开显示器画面窗口'
   }
 }
