@@ -36,8 +36,9 @@ use crate::viewer::{ViewerCaptions, ViewerTarget};
 pub async fn get_snapshot(
     runtime: State<'_, AppRuntime>,
 ) -> Result<AppSnapshot, EasyVirtualDisplayError> {
-    let host = runtime.backend.get_snapshot().await?;
-    Ok(runtime.compose_app_snapshot(host))
+    // Starting the host publishes its initial snapshot before this returns.
+    runtime.backend.start().await?;
+    Ok(runtime.current_snapshot())
 }
 
 #[tauri::command]
@@ -181,7 +182,9 @@ pub async fn open_display_viewer(
     runtime: State<'_, AppRuntime>,
     index: i32,
 ) -> Result<(), EasyVirtualDisplayError> {
-    let host = runtime.backend.get_snapshot().await?;
+    // Check against the published state, which is what reaps viewers of removed displays.
+    runtime.backend.start().await?;
+    let host = runtime.published_host();
     let display = host
         .displays
         .iter()
