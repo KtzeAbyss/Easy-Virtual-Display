@@ -64,6 +64,7 @@ npm install
 ### 开发模式运行
 
 ```bash
+npm run fetch:vdd   # 首次运行：把驱动安装包下载到 vendor/parsec-vdd/
 npm run tauri:dev
 ```
 
@@ -80,7 +81,7 @@ npm run test
 npm run tauri:build
 ```
 
-该命令会发布 .NET 宿主，并生成一个 NSIS 安装包，其中打包了渲染层、Rust 外壳与驱动。
+该命令会获取驱动安装包（按固定的 SHA-256 校验）、发布 .NET 宿主，并生成一个 NSIS 安装包，其中打包了渲染层、Rust 外壳与驱动。
 
 ## 仓库
 

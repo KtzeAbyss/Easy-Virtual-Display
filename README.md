@@ -64,6 +64,7 @@ npm install
 ### Run in development
 
 ```bash
+npm run fetch:vdd   # once: downloads the driver installer into vendor/parsec-vdd/
 npm run tauri:dev
 ```
 
@@ -80,7 +81,7 @@ npm run test
 npm run tauri:build
 ```
 
-This publishes the .NET host and produces an NSIS installer that bundles the renderer, the Rust shell, and the driver.
+This fetches the driver installer (checked against a pinned SHA-256), publishes the .NET host, and produces an NSIS installer that bundles the renderer, the Rust shell, and the driver.
 
 ## Repository
 
