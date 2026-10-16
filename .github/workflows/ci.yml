@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to the same branch or PR supersedes the run in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck and test
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      # Third-party actions are pinned to a commit; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Renderer tests
+        run: npm test
+
+      - name: .NET tests
+        run: dotnet test native/EasyVirtualDisplay.Vdd.Tests/EasyVirtualDisplay.Vdd.Tests.csproj
+
+      # tauri-build bundles the published native host and embeds the web build, so both
+      # must exist before cargo compiles the shell.
+      - name: Build native host
+        run: npm run build:native
+
+      - name: Build web
+        run: npm run build:web
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --lib --locked
