@@ -25,5 +25,9 @@ export default {
   placeholder_hz: 'Hz',
   config_saved: '配置已提交',
   empty_title: '暂无虚拟显示器',
-  empty_description: '点击"添加显示器"创建一台虚拟显示器'
+  empty_description: '点击"添加显示器"创建一台虚拟显示器',
+  open_viewer: '查看画面',
+  close_viewer: '关闭画面',
+  viewer_hint:
+    '在窗口中镜像该显示器的画面。点击窗口内部即可接管鼠标键盘，按标题栏提示的快捷键可释放。若快捷键被该显示器上的程序拦截（如全屏远程桌面），可按 Ctrl+Alt+Del 再按 Esc 释放。'
 }

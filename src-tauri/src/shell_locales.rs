@@ -16,6 +16,8 @@ const ZH_SHELL: &str = include_str!("../../src/shared/locales/zh-CN/shell.json")
 struct ShellLocale {
     tray: HashMap<String, String>,
     common: HashMap<String, String>,
+    /// Captions for the native display-viewer windows (`src-tauri/src/viewer`).
+    viewer: HashMap<String, String>,
 }
 
 struct LocaleBundle {
@@ -44,24 +46,31 @@ fn lookup<'a>(
     let table = match namespace {
         "tray" => &bundle.tray,
         "common" => &bundle.common,
+        "viewer" => &bundle.viewer,
         _ => return None,
     };
     table.get(key).map(|s| s.as_str())
 }
 
-/// Look up a key from `tray` namespace. Falls back to English when the active locale is
-/// missing the key (which the parity test prevents in practice, but the fallback keeps
-/// runtime safe).
-pub fn t_tray(lang: EffectiveLanguage, key: &str) -> &'static str {
-    lookup(lang, "tray", key)
-        .or_else(|| lookup(EffectiveLanguage::En, "tray", key))
+/// Look up `key` in `namespace`. Falls back to English when the active locale is missing
+/// the key (which the parity test prevents in practice, but the fallback keeps runtime
+/// safe).
+fn t(lang: EffectiveLanguage, namespace: &'static str, key: &str) -> &'static str {
+    lookup(lang, namespace, key)
+        .or_else(|| lookup(EffectiveLanguage::En, namespace, key))
         .unwrap_or("")
 }
 
+pub fn t_tray(lang: EffectiveLanguage, key: &str) -> &'static str {
+    t(lang, "tray", key)
+}
+
 pub fn t_common(lang: EffectiveLanguage, key: &str) -> &'static str {
-    lookup(lang, "common", key)
-        .or_else(|| lookup(EffectiveLanguage::En, "common", key))
-        .unwrap_or("")
+    t(lang, "common", key)
+}
+
+pub fn t_viewer(lang: EffectiveLanguage, key: &str) -> &'static str {
+    t(lang, "viewer", key)
 }
 
 /// Substitutes i18next-style `{{var}}` placeholders. Only used by tray tooltips that
@@ -105,6 +114,17 @@ mod tests {
         let tpl = t_tray(EffectiveLanguage::En, "tooltip_active");
         let rendered = format_template(tpl, &[("count", "3")]);
         assert_eq!(rendered, "Easy Virtual Display (3 active)");
+    }
+
+    #[test]
+    fn shell_viewer_caption_strings_present() {
+        for key in ["title", "hint_idle", "hint_grabbed"] {
+            assert!(!t_viewer(EffectiveLanguage::En, key).is_empty(), "{key}");
+            assert!(!t_viewer(EffectiveLanguage::ZhCn, key).is_empty(), "{key}");
+        }
+        // The window caption substitutes both placeholders at runtime.
+        assert!(t_viewer(EffectiveLanguage::En, "title").contains("{{index}}"));
+        assert!(t_viewer(EffectiveLanguage::En, "hint_grabbed").contains("{{hotkey}}"));
     }
 
     #[test]

@@ -42,4 +42,7 @@ export interface EasyVirtualDisplayBridge {
   updateSettings(patch: Partial<AppSettings>): Promise<void>
   openDisplaySettings(): Promise<void>
   showMainWindow(): Promise<void>
+  /** Mirror a virtual display into a local window, or focus the window if already open. */
+  openDisplayViewer(index: number): Promise<void>
+  closeDisplayViewer(index: number): Promise<void>
 }

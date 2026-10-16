@@ -14,6 +14,8 @@
 //!   updateSettings      → update_settings
 //!   openDisplaySettings → open_display_settings
 //!   showMainWindow      → show_main_window
+//!   openDisplayViewer   → open_display_viewer
+//!   closeDisplayViewer  → close_display_viewer
 
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_opener::OpenerExt;
@@ -24,9 +26,11 @@ use crate::contracts::{
 };
 use crate::drivers;
 use crate::errors::{EasyVirtualDisplayError, EasyVirtualDisplayErrorCode};
-use crate::events::{emit_language_changed, emit_snapshot};
+use crate::events::emit_language_changed;
 use crate::settings_store;
+use crate::shell_locales::t_viewer;
 use crate::tray;
+use crate::viewer::{ViewerCaptions, ViewerTarget};
 
 #[tauri::command]
 pub async fn get_snapshot(
@@ -89,13 +93,15 @@ pub async fn update_settings(
 
     if let Some(lang) = language_change {
         emit_language_changed(&app, lang);
+        runtime.viewers.update_captions(viewer_captions(lang));
     }
 
-    let host = runtime.backend.get_snapshot().await?;
-    let snap = runtime.compose_app_snapshot(host.clone());
-    emit_snapshot(&app, &snap);
+    // Make sure the host is running (and surface it if it is not), then re-emit the
+    // published state so every consumer sees the same host snapshot.
+    runtime.backend.start().await?;
+    let snap = runtime.republish_snapshot(&app);
     tray::refresh(&snap);
-    runtime.boundaries.handle_snapshot(&host, &merged).await;
+    runtime.boundaries.handle_snapshot(&snap.host, &merged).await;
     Ok(())
 }
 
@@ -122,6 +128,14 @@ fn merge_settings(mut cur: AppSettings, patch: AppSettingsPatch) -> AppSettings 
         cur.language = v;
     }
     cur
+}
+
+fn viewer_captions(lang: crate::contracts::EffectiveLanguage) -> ViewerCaptions {
+    ViewerCaptions {
+        title_template: t_viewer(lang, "title").to_string(),
+        hint_idle: t_viewer(lang, "hint_idle").to_string(),
+        hint_grabbed: t_viewer(lang, "hint_grabbed").to_string(),
+    }
 }
 
 #[tauri::command]
@@ -161,6 +175,60 @@ pub fn open_display_settings(app: AppHandle) -> Result<(), EasyVirtualDisplayErr
         })
 }
 
+/// Open (or focus) the mirror window for a virtual display — issue #39.
+#[tauri::command]
+pub async fn open_display_viewer(
+    runtime: State<'_, AppRuntime>,
+    index: i32,
+) -> Result<(), EasyVirtualDisplayError> {
+    let host = runtime.backend.get_snapshot().await?;
+    let display = host
+        .displays
+        .iter()
+        .find(|d| d.index == index)
+        .ok_or_else(|| {
+            EasyVirtualDisplayError::new(
+                EasyVirtualDisplayErrorCode::DisplayNotFound,
+                format!("No virtual display with index {index}."),
+            )
+        })?;
+
+    if !display.active {
+        return Err(EasyVirtualDisplayError::new(
+            EasyVirtualDisplayErrorCode::DisplayNotFound,
+            format!("Virtual display {index} is not active, so it has nothing to mirror."),
+        ));
+    }
+
+    let lang = runtime.effective_language();
+    let target = ViewerTarget {
+        index,
+        device_name: display.device_name.clone(),
+        captions: viewer_captions(lang),
+    };
+
+    // Waiting for the viewer UI thread to build the window, D3D device and capture
+    // session blocks briefly — keep it off the async runtime's worker.
+    let viewers = runtime.viewers.clone();
+    tauri::async_runtime::spawn_blocking(move || viewers.open(target))
+        .await
+        .map_err(|error| {
+            EasyVirtualDisplayError::new(
+                EasyVirtualDisplayErrorCode::ViewerStartFailed,
+                format!("Display viewer startup was interrupted: {error}"),
+            )
+        })?
+}
+
+#[tauri::command]
+pub fn close_display_viewer(
+    runtime: State<'_, AppRuntime>,
+    index: i32,
+) -> Result<(), EasyVirtualDisplayError> {
+    runtime.viewers.close(index);
+    Ok(())
+}
+
 #[tauri::command]
 pub fn show_main_window(app: AppHandle) -> Result<(), EasyVirtualDisplayError> {
     if let Some(window) = app.get_webview_window("main") {
@@ -198,5 +266,15 @@ mod tests {
         let cur = default_app_settings();
         let merged = merge_settings(cur.clone(), AppSettingsPatch::default());
         assert_eq!(merged, cur);
+    }
+
+    #[test]
+    fn viewer_captions_follow_effective_language() {
+        let en = viewer_captions(crate::contracts::EffectiveLanguage::En);
+        let zh = viewer_captions(crate::contracts::EffectiveLanguage::ZhCn);
+
+        assert_ne!(en, zh);
+        assert!(en.title_template.contains("{{index}}"));
+        assert!(zh.title_template.contains("{{index}}"));
     }
 }

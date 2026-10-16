@@ -26,20 +26,24 @@ describe('DisplayCard', () => {
   })
 
   it('renders display name and current mode', () => {
-    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} />)
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
     expect(screen.getByText('Virtual Display 1')).toBeInTheDocument()
     expect(screen.getByText(/1920.*1080.*60/)).toBeInTheDocument()
   })
 
   it('shows unsupported mode badge when unsupportedCurrentMode is true', () => {
     renderWithI18n(
-      <DisplayCard display={{ ...mockDisplay, unsupportedCurrentMode: true }} driverOk={true} />
+      <DisplayCard
+        display={{ ...mockDisplay, unsupportedCurrentMode: true }}
+        driverOk={true}
+        viewerOpen={false}
+      />
     )
     expect(screen.getByText('unsupported mode')).toBeInTheDocument()
   })
 
   it('does not show unsupported mode badge normally', () => {
-    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} />)
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
     expect(screen.queryByText('unsupported mode')).not.toBeInTheDocument()
   })
 
@@ -47,7 +51,7 @@ describe('DisplayCard', () => {
     const user = userEvent.setup()
     vi.mocked(window.easyVirtualDisplay.removeDisplay).mockResolvedValue(undefined)
 
-    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} />)
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
     await user.click(screen.getByRole('button', { name: /remove/i }))
 
     await waitFor(() => {
@@ -56,13 +60,55 @@ describe('DisplayCard', () => {
   })
 
   it('renders three select triggers for resolution, refresh rate, and orientation', () => {
-    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} />)
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
     const triggers = screen.getAllByRole('combobox')
     expect(triggers).toHaveLength(3)
   })
 
+  it('opens the mirror window for this display when View is clicked', async () => {
+    const user = userEvent.setup()
+
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
+    await user.click(screen.getByRole('button', { name: /^view$/i }))
+
+    await waitFor(() => {
+      expect(window.easyVirtualDisplay.openDisplayViewer).toHaveBeenCalledWith(0)
+    })
+  })
+
+  it('closes the mirror window when one is already open', async () => {
+    const user = userEvent.setup()
+
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={true} />)
+    await user.click(screen.getByRole('button', { name: /close view/i }))
+
+    await waitFor(() => {
+      expect(window.easyVirtualDisplay.closeDisplayViewer).toHaveBeenCalledWith(0)
+    })
+  })
+
+  it('can still close an open viewer while the driver is not ok', async () => {
+    const user = userEvent.setup()
+
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={false} viewerOpen={true} />)
+    const close = screen.getByRole('button', { name: /close view/i })
+    expect(close).toBeEnabled()
+    await user.click(close)
+
+    await waitFor(() => {
+      expect(window.easyVirtualDisplay.closeDisplayViewer).toHaveBeenCalledWith(0)
+    })
+  })
+
+  it('cannot open a viewer for an inactive display', () => {
+    renderWithI18n(
+      <DisplayCard display={{ ...mockDisplay, active: false }} driverOk={true} viewerOpen={false} />
+    )
+    expect(screen.getByRole('button', { name: /^view$/i })).toBeDisabled()
+  })
+
   it('disables controls when driver is not ok', () => {
-    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={false} />)
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={false} viewerOpen={false} />)
     const triggers = screen.getAllByRole('combobox')
     triggers.forEach((s) => expect(s).toBeDisabled())
   })

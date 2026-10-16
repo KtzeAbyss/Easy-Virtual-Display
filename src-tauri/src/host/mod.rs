@@ -46,7 +46,7 @@ struct RunningHandles {
 }
 
 pub type CommandFactory = Arc<dyn Fn() -> HostCommand + Send + Sync>;
-pub type SnapshotBroadcaster = Arc<dyn Fn(&HostSnapshot) + Send + Sync>;
+pub type SnapshotBroadcaster = Arc<dyn Fn(u64, &HostSnapshot) + Send + Sync>;
 
 /// Cross-platform JSON-RPC client around a stdio sidecar. Spawns the host process,
 /// pumps requests/responses, and exposes the platform-neutral surface that maps to
@@ -79,6 +79,23 @@ impl StdioJsonRpcBackend {
     pub fn set_snapshot_broadcaster(&self, broadcaster: SnapshotBroadcaster) {
         if let Ok(mut guard) = self.snapshot_broadcaster.lock() {
             *guard = Some(broadcaster);
+        }
+    }
+
+    async fn apply_initial_snapshot(&self, session_id: u64, initial: HostSnapshot) {
+        let applied = {
+            let mut state = self.state.lock().await;
+            if state.active_session_id != session_id {
+                return;
+            }
+            state.apply_snapshot(initial)
+        };
+        if let Some(snapshot) = applied {
+            if let Ok(broadcaster) = self.snapshot_broadcaster.lock() {
+                if let Some(broadcast) = broadcaster.as_ref() {
+                    broadcast(session_id, &snapshot);
+                }
+            }
         }
     }
 
@@ -182,8 +199,7 @@ impl StdioJsonRpcBackend {
             .await
         {
             Ok(initial) => {
-                let mut state = self.state.lock().await;
-                state.apply_snapshot(initial);
+                self.apply_initial_snapshot(session_id, initial).await;
                 Ok(())
             }
             Err(err) => {
@@ -254,10 +270,11 @@ impl StdioJsonRpcBackend {
         if let Some(applied) = state.apply_snapshot(latest.clone()) {
             // The reader task didn't see this (we polled), so broadcast manually.
             let listeners = state.listener_handles();
+            let session_id = state.active_session_id;
             drop(state);
             if let Ok(broadcaster) = self.snapshot_broadcaster.lock() {
                 if let Some(b) = broadcaster.as_ref() {
-                    b(&applied);
+                    b(session_id, &applied);
                 }
             }
             for listener in listeners {
@@ -460,7 +477,7 @@ async fn reader_task(
                 if let Some(snap) = applied_snapshot {
                     if let Ok(guard) = broadcaster.lock() {
                         if let Some(b) = guard.as_ref() {
-                            b(&snap);
+                            b(session_id, &snap);
                         }
                     }
                     for listener in listeners {
@@ -574,6 +591,24 @@ mod tests {
             cwd: project_root,
             env,
         }
+    }
+
+    #[tokio::test]
+    async fn initial_rpc_snapshot_is_broadcast_before_startup_completes() {
+        let backend = StdioJsonRpcBackend::new(Arc::new(|| dev_command()), empty_host_snapshot());
+        let seen = Arc::new(std::sync::Mutex::new(None));
+        let seen_by_broadcaster = Arc::clone(&seen);
+        backend.set_snapshot_broadcaster(Arc::new(move |session_id, snapshot| {
+            *seen_by_broadcaster.lock().expect("seen poisoned") =
+                Some((session_id, snapshot.revision));
+        }));
+        let session_id = backend.state.lock().await.begin_session();
+        let mut initial = empty_host_snapshot();
+        initial.revision = 7;
+
+        backend.apply_initial_snapshot(session_id, initial).await;
+
+        assert_eq!(*seen.lock().expect("seen poisoned"), Some((session_id, 7)));
     }
 
     #[tokio::test]

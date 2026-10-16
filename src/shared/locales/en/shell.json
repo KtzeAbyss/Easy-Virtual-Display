@@ -21,5 +21,10 @@
     "install_driver_title": "Install Virtual Display Driver",
     "install_driver_message": "The Parsec virtual display driver is not installed.",
     "install_driver_detail": "Install the bundled driver now to enable virtual display management."
+  },
+  "viewer": {
+    "title": "Virtual display #{{index}}",
+    "hint_idle": "Click to control",
+    "hint_grabbed": "Press {{hotkey}} to release (if that fails: Ctrl+Alt+Del, then Esc)"
   }
 }

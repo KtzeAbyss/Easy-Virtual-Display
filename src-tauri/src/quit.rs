@@ -40,6 +40,7 @@ async fn run_quit_flow(app: AppHandle<Wry>) {
     let snapshot = match runtime.backend.get_snapshot().await {
         Ok(s) => s,
         Err(_) => {
+            runtime.viewers.close_all();
             app.exit(0);
             return;
         }
@@ -47,11 +48,19 @@ async fn run_quit_flow(app: AppHandle<Wry>) {
 
     let active_count = snapshot.displays.iter().filter(|d| d.active).count();
     if active_count > 0 {
+        // The confirmation dialog must remain reachable even if a viewer currently owns
+        // the pointer. Keep the viewing session itself alive if the user cancels.
+        runtime.viewers.release_input();
         let lang = runtime.effective_language();
         let confirmed = confirm_quit(&app, lang, active_count).await;
         if !confirmed {
             return;
         }
+    }
+
+    // Stop capture sessions before their source displays are removed.
+    runtime.viewers.close_all();
+    if active_count > 0 {
         let _ = runtime.backend.remove_all_displays().await;
     }
 

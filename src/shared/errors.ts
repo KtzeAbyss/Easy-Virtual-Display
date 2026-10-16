@@ -12,7 +12,9 @@ export const EASY_VIRTUAL_DISPLAY_ERROR_CODES = [
   'driver_uninstall_not_installed',
   'dotnet_runtime_missing',
   'native_host_unavailable',
-  'config_apply_timeout'
+  'config_apply_timeout',
+  'viewer_unsupported',
+  'viewer_start_failed'
 ] as const
 
 export type EasyVirtualDisplayErrorCode = (typeof EASY_VIRTUAL_DISPLAY_ERROR_CODES)[number]

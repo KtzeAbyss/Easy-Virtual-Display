@@ -25,6 +25,8 @@ pub enum EasyVirtualDisplayErrorCode {
     DotnetRuntimeMissing,
     NativeHostUnavailable,
     ConfigApplyTimeout,
+    ViewerUnsupported,
+    ViewerStartFailed,
 }
 
 /// The wire-level error shape the renderer sees when a Tauri command rejects.

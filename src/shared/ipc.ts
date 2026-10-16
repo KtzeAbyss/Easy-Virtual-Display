@@ -11,7 +11,9 @@ export const rendererInvokeChannels = {
   applyAdminConfig: `${IPC_NAMESPACE}:apply-admin-config`,
   updateSettings: `${IPC_NAMESPACE}:update-settings`,
   openDisplaySettings: `${IPC_NAMESPACE}:open-display-settings`,
-  showMainWindow: `${IPC_NAMESPACE}:show-main-window`
+  showMainWindow: `${IPC_NAMESPACE}:show-main-window`,
+  openDisplayViewer: `${IPC_NAMESPACE}:open-display-viewer`,
+  closeDisplayViewer: `${IPC_NAMESPACE}:close-display-viewer`
 } as const
 
 export const rendererEventChannels = {

@@ -25,5 +25,9 @@ export default {
   placeholder_hz: 'Hz',
   config_saved: 'Configuration submitted',
   empty_title: 'No Virtual Displays',
-  empty_description: 'Click "Add Display" to create a virtual display'
+  empty_description: 'Click "Add Display" to create a virtual display',
+  open_viewer: 'View',
+  close_viewer: 'Close view',
+  viewer_hint:
+    'Mirror this display in a window. Click inside it to take over the mouse and keyboard; the hotkey shown in the title bar gives them back. If an app on the display swallows that hotkey (e.g. full-screen Remote Desktop), press Ctrl+Alt+Del, then Esc.'
 }

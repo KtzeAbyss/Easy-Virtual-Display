@@ -23,7 +23,8 @@ const makeSnapshot = (overrides: Partial<AppSnapshot['host']> = {}): AppSnapshot
     theme: 'system',
     language: 'system'
   },
-  effectiveLanguage: 'en'
+  effectiveLanguage: 'en',
+  openViewers: []
 })
 
 const createWrapper = (): React.FC<{ children: React.ReactNode }> => {

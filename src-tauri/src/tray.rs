@@ -277,10 +277,9 @@ where
     let _ = runtime.replace_settings(merged.clone());
     runtime.boundaries.sync_settings(&merged);
 
-    if let Ok(host) = runtime.backend.get_snapshot().await {
-        let snap = runtime.compose_app_snapshot(host.clone());
-        crate::events::emit_snapshot(app, &snap);
+    if runtime.backend.start().await.is_ok() {
+        let snap = runtime.republish_snapshot(app);
         refresh(&snap);
-        runtime.boundaries.handle_snapshot(&host, &merged).await;
+        runtime.boundaries.handle_snapshot(&snap.host, &merged).await;
     }
 }
