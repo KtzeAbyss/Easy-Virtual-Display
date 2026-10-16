@@ -6,7 +6,7 @@
   "mainBinaryName": "EasyVirtualDisplay",
   "build": {
     "beforeDevCommand": "npm run dev:web",
-    "beforeBuildCommand": "npm run build:native && npm run build:web",
+    "beforeBuildCommand": "npm run fetch:vdd && npm run build:native && npm run build:web",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist/renderer"
   },

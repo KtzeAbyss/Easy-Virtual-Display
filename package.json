@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "test": "vitest run",
+    "fetch:vdd": "node scripts/fetch-vdd.mjs",
     "build:native": "dotnet publish native/EasyVirtualDisplay.Host/EasyVirtualDisplay.Host.csproj -c Release -r win-x64 --self-contained false -o native/EasyVirtualDisplay.Host/bin/publish",
     "dev:web": "vite",
     "build:web": "vite build",
