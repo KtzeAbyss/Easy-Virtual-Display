@@ -868,7 +868,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "easy-virtual-display"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "once_cell",
  "regex",
