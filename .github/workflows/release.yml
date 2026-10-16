@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  # Manual run: build the installer as a workflow artifact without touching releases.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Never cancel a release build halfway through uploading.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build installer
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      # Third-party actions are pinned to a commit; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: npm ci
+
+      - name: Check versions match the tag
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(node -p "require('./package.json').version")
+          conf=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n 1)
+          echo "tag=$tag package.json=$pkg tauri.conf.json=$conf Cargo.toml=$cargo"
+          if [ "$pkg" != "$tag" ] || [ "$conf" != "$tag" ] || [ "$cargo" != "$tag" ]; then
+            echo "::error::Version mismatch: bump all three files to $tag before tagging."
+            exit 1
+          fi
+
+      # beforeBuildCommand fetches and verifies the driver installer, then builds the
+      # native host and the web assets. Tag pushes upload to a draft release; manual
+      # runs upload the installer as a workflow artifact instead.
+      - name: Build installer
+        id: tauri
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: Easy Virtual Display ${{ github.ref_name }}
+          releaseDraft: true
+          generateReleaseNotes: true
+          uploadUpdaterJson: false
+          uploadWorkflowArtifacts: ${{ github.ref_type != 'tag' }}
+
+      - name: Checksums
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_VERSION: ${{ steps.tauri.outputs.appVersion }}
+        run: |
+          # Only this build's installer: the cached target dir may hold older bundles.
+          cd src-tauri/target/release/bundle/nsis
+          sha256sum *_"$APP_VERSION"_*-setup.exe > SHA256SUMS.txt
+          { echo '```'; cat SHA256SUMS.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            gh release upload "$GITHUB_REF_NAME" SHA256SUMS.txt --clobber
+          fi
