@@ -18,7 +18,7 @@ It builds on the early concept of [nomi-san/parsec-vdd](https://github.com/nomi-
 - **Custom resolution modes** — define up to 5 custom modes the driver should advertise.
 - **GPU targeting** — pin virtual displays to a specific parent GPU (Auto / NVIDIA / AMD).
 - **At-a-glance status** — driver state, driver version, max displays, and active display count.
-- **Smart behaviors** — launch on login, close-to-tray, start minimized, *keep screen on* while a display is active, and a *fallback display* that auto-appears when your primary monitor disconnects.
+- **Smart behaviors** — launch on login, close-to-tray, start in tray, *keep screen on* while a display is active, and a *fallback display* that auto-appears when your primary monitor disconnects.
 - **Polished UX** — light / dark / system themes and an English / 简体中文 interface.
 
 ## How it works

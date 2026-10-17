@@ -6,9 +6,11 @@
 //!     uninstall (e.g. user removed the driver from Windows Settings) re-prompts;
 //!   - host status `not_installed` → claim the latch atomically; only the winning caller
 //!     shows the dialog. Confirming routes straight into `drivers::install_driver` (same
-//!     flow the renderer's "Install Driver" button uses).
+//!     flow the renderer's "Install Driver" button uses). Skipped while the main window is
+//!     hidden (background / start-in-tray launches) so nothing pops up uninvited; the
+//!     renderer's driver bar still offers the install.
 
-use tauri::{AppHandle, Wry};
+use tauri::{AppHandle, Manager, Wry};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 use crate::app_state::AppRuntime;
@@ -25,7 +27,11 @@ pub async fn maybe_prompt_to_install_driver(
         runtime.set_install_prompt_shown(false);
         return;
     }
-    if !runtime.try_claim_install_prompt() {
+    let window_visible = app
+        .get_webview_window("main")
+        .and_then(|window| window.is_visible().ok())
+        .unwrap_or(false);
+    if !window_visible || !runtime.try_claim_install_prompt() {
         return;
     }
 

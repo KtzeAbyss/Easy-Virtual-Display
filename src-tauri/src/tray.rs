@@ -22,7 +22,6 @@ use tauri::{AppHandle, Manager, Wry};
 use crate::app_state::AppRuntime;
 use crate::contracts::{AppLanguage, AppSnapshot, AppSettingsPatch};
 use crate::quit;
-use crate::settings_store;
 use crate::shell_locales::{format_template, t_tray};
 
 pub const TRAY_ITEM_SHOW: &str = "tray_show";
@@ -250,8 +249,8 @@ fn spawn_toggle_launch_on_login(app: AppHandle<Wry>) {
     });
 }
 
-/// Common path for the two boolean tray toggles. Persists + refreshes tray + emits the
-/// `snapshot-changed` event so the renderer's switches stay in sync.
+/// Common path for the two boolean tray toggles. Goes through the same settings path as
+/// the renderer; on failure the menu re-syncs, undoing the checkbox's own toggle.
 async fn toggle_setting<F>(app: &AppHandle<Wry>, build_patch: F)
 where
     F: FnOnce(&mut AppSettingsPatch, &crate::contracts::AppSettings),
@@ -259,27 +258,13 @@ where
     let Some(runtime) = app.try_state::<AppRuntime>() else {
         return;
     };
-    let current = runtime.settings_snapshot();
     let mut patch = AppSettingsPatch::default();
-    build_patch(&mut patch, &current);
+    build_patch(&mut patch, &runtime.settings_snapshot());
 
-    let mut merged = current;
-    if let Some(v) = patch.keep_screen_on {
-        merged.keep_screen_on = v;
-    }
-    if let Some(v) = patch.launch_on_login {
-        merged.launch_on_login = v;
-    }
-
-    if settings_store::save(app, &merged).is_err() {
-        return;
-    }
-    let _ = runtime.replace_settings(merged.clone());
-    runtime.boundaries.sync_settings(&merged);
-
-    if runtime.backend.start().await.is_ok() {
-        let snap = runtime.republish_snapshot(app);
-        refresh(&snap);
-        runtime.boundaries.handle_snapshot(&snap.host, &merged).await;
+    if crate::commands::apply_settings_patch(app, runtime.inner(), patch)
+        .await
+        .is_err()
+    {
+        refresh(&runtime.current_snapshot());
     }
 }
