@@ -18,7 +18,8 @@ use crate::host::StdioJsonRpcBackend;
 
 /// Aggregates the three boundaries — the orchestrator mirrors `syncSystemSettings`
 /// from `src/main/app-settings.ts` but split per signal:
-///   `sync_settings(settings)` runs on settings change (launch_on_login + keep_screen_on)
+///   `sync_settings(settings)` runs at boot and on settings change (keep_screen_on)
+///   `launch_on_login` is written only when its own toggle flips (see `apply_settings_patch`)
 ///   `handle_snapshot(host, settings)` runs on every snapshot (fallback_display)
 pub struct SystemBoundaries {
     pub launch_on_login: Arc<dyn LaunchOnLoginBoundary>,
@@ -42,8 +43,12 @@ impl SystemBoundaries {
     }
 
     pub fn sync_settings(&self, settings: &AppSettings) {
-        self.launch_on_login.sync(settings.launch_on_login);
         self.keep_screen_on.sync(settings.keep_screen_on);
+    }
+
+    /// Actual launch-on-login state at boot, or `None` when the OS can't tell us.
+    pub fn reconcile_launch_on_login(&self) -> Option<bool> {
+        launch_on_login::reconcile_at_boot(self.launch_on_login.as_ref())
     }
 
     pub async fn handle_snapshot(&self, host: &HostSnapshot, settings: &AppSettings) {
@@ -60,7 +65,12 @@ impl SystemBoundaries {
     pub fn noop_for_tests() -> Self {
         struct NoopLaunch;
         impl LaunchOnLoginBoundary for NoopLaunch {
-            fn sync(&self, _enabled: bool) {}
+            fn read(&self) -> Option<bool> {
+                None
+            }
+            fn apply(&self, _enabled: bool) -> Result<(), String> {
+                Ok(())
+            }
         }
         struct NoopKeepScreen;
         impl KeepScreenOnBoundary for NoopKeepScreen {

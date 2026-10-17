@@ -26,12 +26,18 @@ use std::sync::Arc;
 
 use tauri::{Manager, WindowEvent};
 
+/// Passed by the launch-on-login entry: start with no window and no install prompt.
+const BACKGROUND_ARG: &str = "--background";
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         // single-instance MUST be registered first (per migration spec §6 Phase 0):
         // earlier than other plugins, setup side-effects, and any window/tray/sidecar work.
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if args.iter().any(|arg| arg == BACKGROUND_ARG) {
+                return;
+            }
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.show();
                 let _ = window.unminimize();
@@ -40,7 +46,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            None,
+            Some(vec![BACKGROUND_ARG]),
         ))
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
@@ -63,7 +69,8 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
 
-            let settings = settings_store::load_or_default(&app_handle);
+            let mut settings = settings_store::load_or_default(&app_handle);
+            let launched_in_background = std::env::args().any(|arg| arg == BACKGROUND_ARG);
             let system_locale = sys_locale::get_locale().unwrap_or_else(|| "en-US".to_string());
 
             let factory_handle = app_handle.clone();
@@ -84,8 +91,17 @@ pub fn run() {
                 runtime.republish_snapshot(&viewer_handle);
             }));
 
-            // Apply persisted launch-on-login + keep-screen-on at boot. fallback_display
-            // is snapshot-driven (handled below by the broadcaster) so we don't fire it here.
+            // The OS autostart entry wins over the persisted setting (the user may have
+            // disabled it from Task Manager); an unreadable state keeps the stored value.
+            if let Some(actual) = boundaries.reconcile_launch_on_login() {
+                if actual != settings.launch_on_login {
+                    settings.launch_on_login = actual;
+                    let _ = settings_store::save(&app_handle, &settings);
+                }
+            }
+
+            // Apply keep-screen-on at boot. fallback_display is snapshot-driven (handled
+            // below by the broadcaster) so we don't fire it here.
             boundaries.sync_settings(&settings);
 
             // Compose AppSnapshot on every applied host snapshot, then fan out to (a) the
@@ -123,6 +139,8 @@ pub fn run() {
                 });
             }));
 
+            let show_window = !launched_in_background && !settings.start_minimized;
+
             let elevator = elevator::create();
             let runtime = AppRuntime::new(
                 backend,
@@ -135,6 +153,27 @@ pub fn run() {
             app.manage(runtime);
 
             tray::setup(&app_handle)?;
+
+            // The window starts hidden (tauri.conf.json) so start-in-tray never flashes it.
+            if show_window {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+
+            // Start the host now rather than waiting for the renderer's first getSnapshot,
+            // so fallback display and the tray work with the window hidden. A failure is
+            // retried, and surfaced, by the renderer's getSnapshot once the window opens.
+            let start_handle = app_handle.clone();
+            tauri::async_runtime::spawn(async move {
+                let Some(runtime) = start_handle.try_state::<AppRuntime>() else {
+                    return;
+                };
+                if let Err(e) = runtime.backend.start().await {
+                    eprintln!("native host failed to start: {e}");
+                }
+            });
 
             // Intercept the X button: close-to-tray hides the window; otherwise run the
             // quit flow ourselves (so we can confirm with the user and tear the host down

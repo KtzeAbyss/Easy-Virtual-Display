@@ -36,6 +36,8 @@ export default {
     config_apply_timeout:
       'Configuration submitted but not yet confirmed — the change should take effect shortly',
     viewer_unsupported: 'Mirroring a display into a window is only supported on Windows',
-    viewer_start_failed: 'Could not open the display viewer window'
+    viewer_start_failed: 'Could not open the display viewer window',
+    launch_on_login_failed: 'Could not change launch on login',
+    settings_save_failed: 'Could not save settings'
   }
 }

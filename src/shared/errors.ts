@@ -14,7 +14,9 @@ export const EASY_VIRTUAL_DISPLAY_ERROR_CODES = [
   'native_host_unavailable',
   'config_apply_timeout',
   'viewer_unsupported',
-  'viewer_start_failed'
+  'viewer_start_failed',
+  'launch_on_login_failed',
+  'settings_save_failed'
 ] as const
 
 export type EasyVirtualDisplayErrorCode = (typeof EASY_VIRTUAL_DISPLAY_ERROR_CODES)[number]

@@ -27,6 +27,8 @@ pub enum EasyVirtualDisplayErrorCode {
     ConfigApplyTimeout,
     ViewerUnsupported,
     ViewerStartFailed,
+    LaunchOnLoginFailed,
+    SettingsSaveFailed,
 }
 
 /// The wire-level error shape the renderer sees when a Tauri command rejects.

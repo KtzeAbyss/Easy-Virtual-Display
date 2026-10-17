@@ -75,32 +75,64 @@ pub async fn update_settings(
     runtime: State<'_, AppRuntime>,
     patch: AppSettingsPatch,
 ) -> Result<(), EasyVirtualDisplayError> {
-    let merged = merge_settings(runtime.settings_snapshot(), patch);
+    apply_settings_patch(&app, runtime.inner(), patch).await
+}
 
-    if let Err(e) = settings_store::save(&app, &merged) {
+/// Shared by the settings panel and the tray toggles.
+pub async fn apply_settings_patch(
+    app: &AppHandle,
+    runtime: &AppRuntime,
+    patch: AppSettingsPatch,
+) -> Result<(), EasyVirtualDisplayError> {
+    let current = runtime.settings_snapshot();
+    let merged = merge_settings(current.clone(), patch);
+
+    // Write the OS autostart entry only when its own toggle flips, and before persisting,
+    // so a failure leaves the stored setting matching what the OS actually does.
+    if merged.launch_on_login != current.launch_on_login {
+        runtime
+            .boundaries
+            .launch_on_login
+            .apply(merged.launch_on_login)
+            .map_err(|e| {
+                EasyVirtualDisplayError::new(
+                    EasyVirtualDisplayErrorCode::LaunchOnLoginFailed,
+                    format!("Failed to update launch on login: {e}"),
+                )
+            })?;
+    }
+
+    if let Err(e) = settings_store::save(app, &merged) {
+        // Undo the autostart write so the OS keeps matching the unchanged setting. If even
+        // that fails, the boot-time reconciliation re-syncs the setting from the OS.
+        if merged.launch_on_login != current.launch_on_login {
+            let _ = runtime
+                .boundaries
+                .launch_on_login
+                .apply(current.launch_on_login);
+        }
         return Err(EasyVirtualDisplayError::new(
-            EasyVirtualDisplayErrorCode::DriverError,
+            EasyVirtualDisplayErrorCode::SettingsSaveFailed,
             format!("Failed to persist settings: {e}"),
         ));
     }
 
     let language_change = runtime.replace_settings(merged.clone());
 
-    // OS-side effects of the new settings (autostart, display-sleep blocker). The
-    // fallback-display boundary is snapshot-driven, so we fire it below from the fresh
-    // host snapshot to catch the edge case "user just enabled fallbackDisplay while no
-    // displays are active".
+    // Display-sleep blocker. The fallback-display boundary is snapshot-driven, so we fire
+    // it below from the fresh host snapshot to catch the edge case "user just enabled
+    // fallbackDisplay while no displays are active".
     runtime.boundaries.sync_settings(&merged);
 
     if let Some(lang) = language_change {
-        emit_language_changed(&app, lang);
+        emit_language_changed(app, lang);
         runtime.viewers.update_captions(viewer_captions(lang));
     }
 
     // Make sure the host is running (and surface it if it is not), then re-emit the
     // published state so every consumer sees the same host snapshot.
     runtime.backend.start().await?;
-    let snap = runtime.republish_snapshot(&app);
+    let snap = runtime.republish_snapshot(app);
     tray::refresh(&snap);
     runtime.boundaries.handle_snapshot(&snap.host, &merged).await;
     Ok(())
