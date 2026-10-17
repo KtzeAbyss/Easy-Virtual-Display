@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::errors::EasyVirtualDisplayErrorCode;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DriverStatus {
@@ -96,6 +98,8 @@ pub struct HostSnapshot {
     pub driver_version: String,
     pub max_displays: i32,
     pub displays: Vec<DisplaySummary>,
+    /// Active display outputs of any kind, ours included.
+    pub active_outputs: i32,
     pub custom_modes: Vec<DisplayMode>,
     pub parent_gpu: ParentGpu,
 }
@@ -122,6 +126,8 @@ pub struct AppSnapshot {
     pub effective_language: EffectiveLanguage,
     /// Display indices that currently have a mirror window open.
     pub open_viewers: Vec<i32>,
+    /// Why the fallback display could not be added; cleared once it is no longer needed.
+    pub fallback_error: Option<EasyVirtualDisplayErrorCode>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,6 +203,7 @@ pub fn empty_host_snapshot() -> HostSnapshot {
         driver_version: "pending".to_string(),
         max_displays: 0,
         displays: Vec::new(),
+        active_outputs: 0,
         custom_modes: Vec::new(),
         parent_gpu: ParentGpu::Auto,
     }
@@ -209,6 +216,7 @@ pub fn empty_app_snapshot() -> AppSnapshot {
         settings: default_app_settings(),
         effective_language: EffectiveLanguage::En,
         open_viewers: Vec::new(),
+        fallback_error: None,
     }
 }
 
@@ -269,6 +277,7 @@ mod tests {
                 supported_resolutions: vec![],
                 unsupported_current_mode: false,
             }],
+            active_outputs: 2,
             custom_modes: vec![DisplayMode {
                 width: 2560,
                 height: 1440,
@@ -284,6 +293,7 @@ mod tests {
         assert!(json.contains("\"currentOrientation\":\"landscape_flipped\""));
         assert!(json.contains("\"customModes\""));
         assert!(json.contains("\"maxDisplays\":4"));
+        assert!(json.contains("\"activeOutputs\":2"));
 
         let back: HostSnapshot = serde_json::from_str(&json).unwrap();
         assert_eq!(back, s);

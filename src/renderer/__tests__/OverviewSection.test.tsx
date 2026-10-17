@@ -9,6 +9,7 @@ const makeHost = (overrides: Partial<AppSnapshot['host']> = {}): AppSnapshot['ho
   driverVersion: '4.22.0.0',
   maxDisplays: 4,
   displays: [],
+  activeOutputs: 0,
   customModes: [],
   parentGpu: 'auto',
   ...overrides

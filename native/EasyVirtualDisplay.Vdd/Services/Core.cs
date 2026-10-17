@@ -38,21 +38,15 @@ internal static unsafe class Core
         Device.CloseHandle(vdd);
     }
 
-    public static List<Display> GetDisplays(out bool noMonitors)
+    public static List<Display> OwnDisplays(List<Display> allDisplays)
     {
-        var displays = Display.GetAllDisplays();
-        noMonitors = displays.Count == 0;
-
-        displays = displays.FindAll(display => display.DisplayName
+        return allDisplays.FindAll(display => display.DisplayName
             .Equals(DISPLAY_ID, StringComparison.OrdinalIgnoreCase));
-
-        noMonitors = displays.Count == 0 && noMonitors;
-        return displays;
     }
 
     public static List<Display> GetDisplays()
     {
-        return GetDisplays(out _);
+        return OwnDisplays(Display.GetAllDisplays());
     }
 
     public static Device.Status QueryStatus(out Version version)

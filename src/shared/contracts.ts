@@ -1,3 +1,5 @@
+import type { EasyVirtualDisplayErrorCode } from './errors'
+
 export const DRIVER_STATUSES = [
   'ok',
   'inaccessible',
@@ -63,6 +65,8 @@ export interface HostSnapshot {
   driverVersion: string
   maxDisplays: number
   displays: DisplaySummary[]
+  /** Active display outputs of any kind, ours included. */
+  activeOutputs: number
   customModes: DisplayMode[]
   parentGpu: ParentGpu
 }
@@ -85,6 +89,8 @@ export interface AppSnapshot {
   effectiveLanguage: EffectiveLanguage
   /** Display indices that currently have a mirror window open. */
   openViewers: number[]
+  /** Why the fallback display could not be added; cleared once it is no longer needed. */
+  fallbackError: EasyVirtualDisplayErrorCode | null
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -103,6 +109,7 @@ export const EMPTY_HOST_SNAPSHOT: HostSnapshot = {
   driverVersion: 'pending',
   maxDisplays: 0,
   displays: [],
+  activeOutputs: 0,
   customModes: [],
   parentGpu: 'auto'
 }
@@ -112,5 +119,6 @@ export const EMPTY_APP_SNAPSHOT: AppSnapshot = {
   host: EMPTY_HOST_SNAPSHOT,
   settings: DEFAULT_APP_SETTINGS,
   effectiveLanguage: 'en',
-  openViewers: []
+  openViewers: [],
+  fallbackError: null
 }

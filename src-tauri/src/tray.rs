@@ -167,11 +167,15 @@ pub fn refresh(snapshot: &AppSnapshot) {
         .set_checked(snapshot.settings.launch_on_login);
     let _ = guard.quit.set_text(t_tray(lang, "quit"));
 
-    let tooltip = if active_count > 0 {
+    let mut tooltip = if active_count > 0 {
         format_template(t_tray(lang, "tooltip_active"), &[("count", &active_count.to_string())])
     } else {
         t_tray(lang, "tooltip_inactive").to_string()
     };
+    if snapshot.fallback_error.is_some() {
+        tooltip.push('\n');
+        tooltip.push_str(t_tray(lang, "tooltip_fallback_failed"));
+    }
     let _ = guard.tray.set_tooltip(Some(tooltip));
 
     // Discourage callers that have a stale AppLanguage::System leftover from drifting.

@@ -11,6 +11,7 @@ const makeSnapshot = (overrides: Partial<AppSnapshot['host']> = {}, seq = 1): Ap
     driverVersion: '4.22.0.0',
     maxDisplays: 4,
     displays: [],
+    activeOutputs: 0,
     customModes: [],
     parentGpu: 'auto',
     ...overrides
@@ -25,7 +26,8 @@ const makeSnapshot = (overrides: Partial<AppSnapshot['host']> = {}, seq = 1): Ap
     language: 'system'
   },
   effectiveLanguage: 'en',
-  openViewers: []
+  openViewers: [],
+  fallbackError: null
 })
 
 const createWrapper = (): React.FC<{ children: React.ReactNode }> => {

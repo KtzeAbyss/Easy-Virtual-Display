@@ -52,6 +52,7 @@ export function SettingsPanel({ snapshot }: SettingsPanelProps): React.JSX.Eleme
       />
       <DisplaySettingsSection
         settings={settings}
+        fallbackError={snapshot.fallbackError}
         onUpdate={updateSetting}
         disabled={isSettingPending}
       />

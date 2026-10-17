@@ -12,6 +12,7 @@ const makeSnapshot = (hostOverrides: Partial<AppSnapshot['host']> = {}): AppSnap
     driverVersion: '4.22.0.0',
     maxDisplays: 4,
     displays: [],
+    activeOutputs: 0,
     customModes: [],
     parentGpu: 'auto',
     ...hostOverrides
@@ -27,6 +28,7 @@ const makeSnapshot = (hostOverrides: Partial<AppSnapshot['host']> = {}): AppSnap
   },
   effectiveLanguage: 'en',
   openViewers: [],
+  fallbackError: null,
   seq: 1
 })
 

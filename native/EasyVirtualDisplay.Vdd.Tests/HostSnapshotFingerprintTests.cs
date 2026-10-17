@@ -76,6 +76,25 @@ public class HostSnapshotFingerprintTests
     }
 
     [Fact]
+    public void DifferentActiveOutputs_ProducesDifferentFingerprint()
+    {
+        var a = MakeSnapshot();
+        var b = new HostSnapshot
+        {
+            Revision = a.Revision,
+            Status = a.Status,
+            DriverVersion = a.DriverVersion,
+            MaxDisplays = a.MaxDisplays,
+            Displays = a.Displays,
+            ActiveOutputs = 1,
+            CustomModes = a.CustomModes,
+            ParentGpu = a.ParentGpu,
+        };
+
+        Assert.NotEqual(HostSnapshotFingerprint.Compute(a), HostSnapshotFingerprint.Compute(b));
+    }
+
+    [Fact]
     public void DifferentCustomModes_ProducesDifferentFingerprint()
     {
         var a = MakeSnapshot();

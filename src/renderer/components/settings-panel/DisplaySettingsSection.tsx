@@ -1,15 +1,17 @@
 import { useTranslation } from 'react-i18next'
-import type { AppSettings } from '../../../shared'
+import type { AppSettings, EasyVirtualDisplayErrorCode } from '../../../shared'
 import { SectionTitle, SettingRow, Switch } from './SettingsPrimitives'
 
 interface DisplaySettingsSectionProps {
   settings: AppSettings
+  fallbackError: EasyVirtualDisplayErrorCode | null
   onUpdate: (patch: Partial<AppSettings>) => void
   disabled: boolean
 }
 
 export function DisplaySettingsSection({
   settings,
+  fallbackError,
   onUpdate,
   disabled
 }: DisplaySettingsSectionProps): React.JSX.Element {
@@ -29,6 +31,13 @@ export function DisplaySettingsSection({
               disabled={disabled}
             />
           </SettingRow>
+          {fallbackError && (
+            <p className="pb-2.5 text-xs text-destructive">
+              {t('settings:fallback_display_failed', {
+                reason: t(`common:errors.${fallbackError}`)
+              })}
+            </p>
+          )}
         </div>
         <div className="px-4">
           <SettingRow
