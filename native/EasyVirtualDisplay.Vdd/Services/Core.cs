@@ -84,7 +84,7 @@ internal static unsafe class Core
         var input = new byte[2];
         input[1] = (byte)(index & 0xFF);
 
-        if (IoControl(vdd, IoCtlCode.IOCTL_REMOVE, input, 1000))
+        if (IoControl(vdd, IoCtlCode.IOCTL_REMOVE, input, 5000))
         {
             Update(vdd);
             return true;
@@ -107,65 +107,91 @@ internal static unsafe class Core
         IOCTL_UNKNOWN1 = 0x22A014,
     }
 
+    private const int InputLength = 32;
+    private const int ERROR_IO_PENDING = 0x3E5;
+    private const int WAIT_TIMEOUT = 0x102;
+
+    // How long a timed-out request may take to wind down after CancelIoEx.
+    private const int CancelGraceMilliseconds = 1000;
+
+    /// <summary>
+    /// Everything the driver may write to until the request completes. It lives in native
+    /// memory because completion can come after the caller has timed out and returned.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Request
+    {
+        public Native.OVERLAPPED Overlapped;
+        public int Output;
+        public fixed byte Input[InputLength];
+    }
+
     private static bool IoControl(IntPtr handle, IoCtlCode code, byte[]? input, int* result, int timeout)
     {
-        var inBuffer = new byte[32];
-        var overlapped = new Native.OVERLAPPED();
+        var request = (Request*)NativeMemory.AllocZeroed((nuint)sizeof(Request));
 
         if (input != null && input.Length > 0)
         {
-            Array.Copy(input, inBuffer, Math.Min(input.Length, inBuffer.Length));
+            input.AsSpan(0, Math.Min(input.Length, InputLength)).CopyTo(new Span<byte>(request->Input, InputLength));
         }
 
-        fixed (byte* buffer = inBuffer)
+        request->Overlapped.hEvent = Native.CreateEvent(null, true, false, null);
+
+        bool sent = Native.DeviceIoControl(handle, (uint)code,
+            request->Input, InputLength,
+            result != null ? &request->Output : null, result != null ? sizeof(int) : 0,
+            null, &request->Overlapped);
+
+        if (!sent && Marshal.GetLastWin32Error() != ERROR_IO_PENDING)
         {
-            int outputLength = result != null ? sizeof(int) : 0;
-            overlapped.hEvent = Native.CreateEvent(null, false, false, null);
+            FreeRequest(request);
+            return false;
+        }
 
-            bool sent = Native.DeviceIoControl(handle, (uint)code,
-                buffer, inBuffer.Length,
-                result, outputLength,
-                null, ref overlapped);
+        bool success = Native.GetOverlappedResultEx(handle, &request->Overlapped,
+            out _, timeout, false);
 
+        if (!success && Marshal.GetLastWin32Error() == WAIT_TIMEOUT)
+        {
+            // Still in flight: cancel it and wait for the driver to let go of the request.
+            Native.CancelIoEx(handle, &request->Overlapped);
+            success = Native.GetOverlappedResultEx(handle, &request->Overlapped,
+                out _, CancelGraceMilliseconds, false);
+
+            if (!success && Marshal.GetLastWin32Error() == WAIT_TIMEOUT)
+            {
+                // The driver may still write to the request; leak it rather than free it.
 #if DEBUG
-            if (code != IoCtlCode.IOCTL_UPDATE)
-            {
-                Debug.WriteLine(string.Format(
-                    "[D] IoControl: {0}\n    Sent: {1}, error: {2}",
-                    code,
-                    sent,
-                    DumpErrorCode(Marshal.GetLastWin32Error())));
-            }
+                Debug.WriteLine($"[D] IoControl: {code} did not finish after cancel; abandoning it");
 #endif
-            if (!sent && Marshal.GetLastWin32Error() == 0x6)
-            {
-                if (overlapped.hEvent != IntPtr.Zero)
-                {
-                    Native.CloseHandle(overlapped.hEvent);
-                }
                 return false;
             }
-
-            bool success = Native.GetOverlappedResultEx(handle, ref overlapped,
-                out var numberOfBytesTransferred, timeout, false);
+        }
 
 #if DEBUG
-            if (code != IoCtlCode.IOCTL_UPDATE)
-            {
-                Debug.WriteLine(string.Format(
-                    "    OverlappedResult: {0}, error: {1}",
-                    success,
-                    DumpErrorCode(Marshal.GetLastWin32Error())));
-            }
+        if (code != IoCtlCode.IOCTL_UPDATE)
+        {
+            Debug.WriteLine($"[D] IoControl: {code} success={success}");
+        }
 #endif
 
-            if (overlapped.hEvent != IntPtr.Zero)
-            {
-                Native.CloseHandle(overlapped.hEvent);
-            }
-
-            return success;
+        if (success && result != null)
+        {
+            *result = request->Output;
         }
+
+        FreeRequest(request);
+        return success;
+    }
+
+    private static void FreeRequest(Request* request)
+    {
+        if (request->Overlapped.hEvent != IntPtr.Zero)
+        {
+            Native.CloseHandle(request->Overlapped.hEvent);
+        }
+
+        NativeMemory.Free(request);
     }
 
     private static bool IoControl(IntPtr handle, IoCtlCode code, byte[]? input, int timeout)
@@ -175,30 +201,10 @@ internal static unsafe class Core
 
     private static bool IoControl(IntPtr handle, IoCtlCode code, byte[]? input, out int result, int timeout)
     {
-        int output;
+        int output = 0;
         bool success = IoControl(handle, code, input, &output, timeout);
         result = output;
         return success;
-    }
-
-    private static string DumpErrorCode(int code)
-    {
-        string ret = code.ToString("X");
-
-        if (code == 0)
-        {
-            ret += " (SUCCESS)";
-        }
-        else if (code == 0x6)
-        {
-            ret += " (ERROR_INVALID_HANDLE)";
-        }
-        else if (code == 0x3E5)
-        {
-            ret += " (ERROR_IO_PENDING)";
-        }
-
-        return ret;
     }
 
     private static class Native
@@ -213,16 +219,20 @@ internal static unsafe class Core
             void* lpOutBuffer,
             int nOutBufferSize,
             void* lpBytesReturned,
-            ref OVERLAPPED lpOverlapped);
+            OVERLAPPED* lpOverlapped);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetOverlappedResultEx(
             IntPtr handle,
-            ref OVERLAPPED lpOverlapped,
+            OVERLAPPED* lpOverlapped,
             out uint lpNumberOfBytesTransferred,
             int dwMilliseconds,
             [MarshalAs(UnmanagedType.Bool)] bool bAlertable);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CancelIoEx(IntPtr handle, OVERLAPPED* lpOverlapped);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct OVERLAPPED
