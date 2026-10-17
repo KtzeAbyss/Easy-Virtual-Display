@@ -95,6 +95,9 @@ public sealed class HostSnapshot
 
     public IReadOnlyList<DisplaySummary> Displays { get; init; } = Array.Empty<DisplaySummary>();
 
+    /// <summary>Active display outputs of any kind, ours included.</summary>
+    public int ActiveOutputs { get; init; }
+
     public IReadOnlyList<DisplayMode> CustomModes { get; init; } = Array.Empty<DisplayMode>();
 
     public string ParentGpu { get; init; } = ParentGpus.Auto;

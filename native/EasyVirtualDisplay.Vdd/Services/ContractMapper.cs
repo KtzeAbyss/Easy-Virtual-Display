@@ -17,6 +17,7 @@ internal static class ContractMapper
             DriverVersion = "0.0.0.0",
             MaxDisplays = Core.MAX_DISPLAYS,
             Displays = Array.Empty<DisplaySummary>(),
+            ActiveOutputs = 0,
             CustomModes = Array.Empty<DisplayMode>(),
             ParentGpu = ParentGpus.Auto,
         };
@@ -27,6 +28,7 @@ internal static class ContractMapper
         Device.Status status,
         Version driverVersion,
         IReadOnlyList<Display> displays,
+        int activeOutputs,
         AdminConfigSnapshot config)
     {
         return new HostSnapshot
@@ -36,6 +38,7 @@ internal static class ContractMapper
             DriverVersion = driverVersion.ToString(),
             MaxDisplays = Core.MAX_DISPLAYS,
             Displays = displays.Select(MapDisplay).ToArray(),
+            ActiveOutputs = activeOutputs,
             CustomModes = config.CustomModes.ToArray(),
             ParentGpu = config.ParentGpu,
         };

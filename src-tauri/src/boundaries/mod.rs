@@ -7,12 +7,13 @@ mod launch_on_login;
 
 use std::sync::Arc;
 
-use tauri::{AppHandle, Wry};
+use tauri::{AppHandle, Manager, Wry};
 
-pub use fallback_display::{AddDisplayCallback, FallbackDisplayBoundary};
+pub use fallback_display::{AddDisplayCallback, FallbackDisplayBoundary, FallbackErrorCallback};
 pub use keep_screen_on::KeepScreenOnBoundary;
 pub use launch_on_login::LaunchOnLoginBoundary;
 
+use crate::app_state::AppRuntime;
 use crate::contracts::{AppSettings, HostSnapshot};
 use crate::host::StdioJsonRpcBackend;
 
@@ -34,11 +35,22 @@ impl SystemBoundaries {
             let b = backend_for_fallback.clone();
             Box::pin(async move { b.add_display().await })
         });
+        // Fallback failures surface in the snapshot (settings panel, tray tooltip)
+        // rather than as a dialog: the window is often hidden when they happen.
+        let error_handle = app.clone();
+        let on_error: FallbackErrorCallback = Arc::new(move |error| {
+            let Some(runtime) = error_handle.try_state::<AppRuntime>() else {
+                return;
+            };
+            runtime.set_fallback_error(error);
+            let snapshot = runtime.republish_snapshot(&error_handle);
+            crate::tray::refresh(&snapshot);
+        });
 
         Self {
             launch_on_login: launch_on_login::create(app),
             keep_screen_on: keep_screen_on::create(),
-            fallback_display: FallbackDisplayBoundary::new(add_display),
+            fallback_display: FallbackDisplayBoundary::new(add_display, on_error),
         }
     }
 
@@ -81,7 +93,7 @@ impl SystemBoundaries {
         Self {
             launch_on_login: Arc::new(NoopLaunch),
             keep_screen_on: Arc::new(NoopKeepScreen),
-            fallback_display: FallbackDisplayBoundary::new(add),
+            fallback_display: FallbackDisplayBoundary::new(add, Arc::new(|_| {})),
         }
     }
 }

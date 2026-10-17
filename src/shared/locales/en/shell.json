@@ -8,6 +8,7 @@
     "quit": "Quit",
     "tooltip_active": "Easy Virtual Display ({{count}} active)",
     "tooltip_inactive": "Easy Virtual Display",
+    "tooltip_fallback_failed": "Fallback display could not be added",
     "quit_title": "Quit Easy Virtual Display",
     "quit_message": "Virtual displays are still active.",
     "quit_detail": "Quitting now will remove {{count}} active virtual display before exit.",

@@ -410,8 +410,9 @@ public sealed class VddSession : IAsyncDisposable
     private HostSnapshot? UpdateSnapshotCore(bool emitIfChanged)
     {
         var effectiveStatus = GetEffectiveStatusCore();
+        var allDisplays = Display.GetAllDisplays();
         var displays = effectiveStatus == Device.Status.OK
-            ? Core.GetDisplays()
+            ? Core.OwnDisplays(allDisplays)
             : new List<Display>();
 
         var config = _configurationService.GetSnapshot();
@@ -420,6 +421,7 @@ public sealed class VddSession : IAsyncDisposable
             effectiveStatus,
             _driverVersion,
             displays,
+            allDisplays.Count(display => display.Active),
             config);
 
         var fingerprint = HostSnapshotFingerprint.Compute(candidate);

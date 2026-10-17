@@ -16,6 +16,7 @@ internal static class HostSnapshotFingerprint
                 snapshot.DriverVersion,
                 snapshot.MaxDisplays,
                 snapshot.Displays,
+                snapshot.ActiveOutputs,
                 snapshot.CustomModes,
                 snapshot.ParentGpu,
             },

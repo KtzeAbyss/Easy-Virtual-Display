@@ -15,6 +15,7 @@ use crate::contracts::{
     HostSnapshot,
 };
 use crate::elevator::Elevator;
+use crate::errors::EasyVirtualDisplayErrorCode;
 use crate::host::StdioJsonRpcBackend;
 use crate::viewer::ViewerHost;
 
@@ -27,6 +28,7 @@ pub struct AppRuntime {
     settings: Mutex<AppSettings>,
     effective_language: Mutex<EffectiveLanguage>,
     install_prompt_shown: Mutex<bool>,
+    fallback_error: Mutex<Option<EasyVirtualDisplayErrorCode>>,
     published_host: Mutex<PublishedHost>,
 }
 
@@ -70,6 +72,7 @@ impl AppRuntime {
             settings: Mutex::new(settings),
             effective_language: Mutex::new(effective_language),
             install_prompt_shown: Mutex::new(false),
+            fallback_error: Mutex::new(None),
             published_host: Mutex::new(PublishedHost {
                 session_id: 0,
                 snapshot: empty_host_snapshot(),
@@ -148,7 +151,13 @@ impl AppRuntime {
             settings: self.settings_snapshot(),
             effective_language: self.effective_language(),
             open_viewers: self.viewers.open_indices(),
+            fallback_error: *self.fallback_error.lock().expect("fallback error poisoned"),
         }
+    }
+
+    /// Carried into every composed snapshot until the fallback boundary clears it.
+    pub fn set_fallback_error(&self, error: Option<EasyVirtualDisplayErrorCode>) {
+        *self.fallback_error.lock().expect("fallback error poisoned") = error;
     }
 
     /// Replace the settings wholesale (caller has already merged the patch). Returns the
