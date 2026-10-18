@@ -68,6 +68,8 @@ jobs:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: Easy Virtual Display ${{ github.ref_name }}
           releaseDraft: true
+          # v1.2.3-beta.1 style tags are published as pre-releases.
+          prerelease: ${{ contains(github.ref_name, '-') }}
           generateReleaseNotes: true
           uploadUpdaterJson: false
           uploadWorkflowArtifacts: ${{ github.ref_type != 'tag' }}
