@@ -19,7 +19,33 @@ Easy Virtual Display 是一款 Windows 桌面应用，让你通过友好的界�
 - **指定 GPU** —— 将虚拟显示器绑定到指定的父级 GPU（自动 / NVIDIA / AMD）。
 - **状态一目了然** —— 驱动状态、驱动版本、最大显示器数量以及当前活动显示器数。
 - **贴心的行为设置** —— 开机自启、关闭到托盘、启动时隐藏到托盘、显示器活动时*保持屏幕常亮*，以及没有任何显示器工作时自动顶上的*兜底显示器*。
+- **命令行控制** —— 用 `evdctl` 在脚本里增删显示器，比如作为 Sunshine 的准备命令。
 - **精致的体验** —— 浅色 / 深色 / 跟随系统主题，界面支持 English / 简体中文。
+
+## 命令行
+
+安装程序会在 `EasyVirtualDisplay.exe` 旁边放一个 `evdctl.cmd`（默认位于 `%LOCALAPPDATA%\EasyVirtualDisplay`）。它请求正在运行的主程序增删显示器，并以退出码返回结果；主程序没有运行时，会先在托盘中启动它。
+
+```bat
+evdctl ensure --key <key> [--wait [秒数]]   :: 为 <key> 添加一块显示器，已有则不再添加
+evdctl release --key <key>                  :: 移除属于 <key> 的显示器，没有则什么也不做
+evdctl status                               :: 以 JSON 输出驱动状态和显示器列表
+```
+
+key 保证 `release` 只移除对应 `ensure` 添加的那块显示器，不会动你自己添加的。`--wait` 会等到显示器真正启用（默认 15 秒）。退出码：`0` 成功，`1` 用法错误，`2` 主程序不可用，`3` 操作失败，`4` 等待超时。
+
+请以与主程序相同的 Windows 用户运行 `evdctl`；以管理员身份运行也可以。
+
+### Sunshine
+
+如果只想在串流时才有虚拟显示器，可在 Sunshine 网页界面里添加准备命令（全局设置在 *General* 中，也可以按应用单独设置）：
+
+| | 命令 |
+| --- | --- |
+| Do | `"C:\Users\<你的用户名>\AppData\Local\EasyVirtualDisplay\evdctl.cmd" ensure --key sunshine --wait` |
+| Undo | `"C:\Users\<你的用户名>\AppData\Local\EasyVirtualDisplay\evdctl.cmd" release --key sunshine` |
+
+`evdctl` 只负责添加和移除显示器。要串流这块显示器或把它设为主显示器，请使用 Sunshine 自身的显示器设置或其他工具。
 
 ## 工作原理
 
@@ -29,7 +55,7 @@ Easy Virtual Display 由三个协同工作的层次组成：
 | --- | --- | --- |
 | **外壳** | Tauri 2（Rust）+ 系统 WebView2 | 窗口、系统托盘、系统集成（自启、防休眠、兜底显示器）、驱动生命周期与权限提升。 |
 | **渲染层** | React 19 + TypeScript（Vite） | 桌面界面——TanStack Query、react-hook-form + Zod、Tailwind CSS、Radix 组件与 i18next。 |
-| **原生宿主** | .NET（C#） | 通过 `DeviceIoControl` / SetupAPI / CfgMgr32 与虚拟显示驱动通信，并经由 stdio JSON-RPC 协议暴露给外壳。 |
+| **原生宿主** | .NET（C#） | 通过 `DeviceIoControl` / SetupAPI / CfgMgr32 与虚拟显示驱动通信，并经由 stdio JSON-RPC 协议暴露给外壳、经由命名管道暴露给 `evdctl`。 |
 
 `src/shared` 中共享的 TypeScript 契约让渲染层与外壳保持严格同步。需要提权的操作（安装/卸载驱动、写入自定义模式）会被路由到专门的提权宿主调用——主程序本身始终以最小权限运行，绝不多取一分。
 
@@ -41,7 +67,7 @@ src/                 React 渲染层 + 共享 TypeScript 契约
   shared/            契约、IPC、语言包（en、zh-CN）
 src-tauri/           Tauri（Rust）外壳——命令、托盘、系统边界
 native/              .NET 宿主 + 虚拟显示控制核心
-  EasyVirtualDisplay.Host/   stdio JSON-RPC 宿主与管理员 CLI
+  EasyVirtualDisplay.Host/   stdio JSON-RPC 宿主、管理员 CLI 与 evdctl 管道
   EasyVirtualDisplay.Vdd/    驱动互操作（DeviceIoControl / SetupAPI）
 vendor/parsec-vdd/   内置的虚拟显示驱动安装包
 ```

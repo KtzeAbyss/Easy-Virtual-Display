@@ -19,7 +19,33 @@ It builds on the early concept of [nomi-san/parsec-vdd](https://github.com/nomi-
 - **GPU targeting** — pin virtual displays to a specific parent GPU (Auto / NVIDIA / AMD).
 - **At-a-glance status** — driver state, driver version, max displays, and active display count.
 - **Smart behaviors** — launch on login, close-to-tray, start in tray, *keep screen on* while a display is active, and a *fallback display* that auto-appears when no display is active.
+- **Command line** — `evdctl` adds and removes displays from scripts, e.g. as Sunshine prep commands.
 - **Polished UX** — light / dark / system themes and an English / 简体中文 interface.
+
+## Command line
+
+The installer puts `evdctl.cmd` next to `EasyVirtualDisplay.exe` (by default in `%LOCALAPPDATA%\EasyVirtualDisplay`). It asks the running app to add or remove a display and exits with the outcome; if the app is not running, it starts it in the tray first.
+
+```bat
+evdctl ensure --key <key> [--wait [seconds]]   :: add a display owned by <key>, unless it has one
+evdctl release --key <key>                     :: remove the display owned by <key>, if any
+evdctl status                                  :: driver status and displays, as JSON
+```
+
+A key lets `release` remove exactly the display its `ensure` added, never one you added yourself. `--wait` also waits until the display is active (15 seconds by default). Exit codes: `0` success, `1` invalid usage, `2` app unavailable, `3` operation failed, `4` timed out waiting.
+
+Run `evdctl` as the same Windows user as the app; running it elevated is fine.
+
+### Sunshine
+
+To get a virtual display only while streaming, add a command preparation (globally under *General*, or per application) in the Sunshine web UI:
+
+| | Command |
+| --- | --- |
+| Do | `"C:\Users\<you>\AppData\Local\EasyVirtualDisplay\evdctl.cmd" ensure --key sunshine --wait` |
+| Undo | `"C:\Users\<you>\AppData\Local\EasyVirtualDisplay\evdctl.cmd" release --key sunshine` |
+
+`evdctl` only adds and removes the display. To stream it, or to make it the primary display, use Sunshine's own display settings or another tool.
 
 ## How it works
 
@@ -29,7 +55,7 @@ Easy Virtual Display is split into three cooperating layers:
 | --- | --- | --- |
 | **Shell** | Tauri 2 (Rust) + system WebView2 | Window, system tray, OS integrations (autostart, keep-awake, fallback display), driver lifecycle, and privilege elevation. |
 | **Renderer** | React 19 + TypeScript (Vite) | The desktop UI — TanStack Query, react-hook-form + Zod, Tailwind CSS, Radix primitives, and i18next. |
-| **Native host** | .NET (C#) | Talks to the virtual display driver over `DeviceIoControl` / SetupAPI / CfgMgr32 and exposes it to the shell via a stdio JSON-RPC protocol. |
+| **Native host** | .NET (C#) | Talks to the virtual display driver over `DeviceIoControl` / SetupAPI / CfgMgr32 and exposes it to the shell via a stdio JSON-RPC protocol, and to `evdctl` via a named pipe. |
 
 Shared TypeScript contracts in `src/shared` keep the renderer and shell in lock-step. Privileged actions (install/uninstall the driver, write custom modes) are routed through a dedicated elevated host invocation so the main app never runs with more rights than it needs.
 
@@ -41,7 +67,7 @@ src/                 React renderer + shared TypeScript contracts
   shared/            contracts, IPC, locales (en, zh-CN)
 src-tauri/           Tauri (Rust) shell — commands, tray, OS boundaries
 native/              .NET host + virtual display control core
-  EasyVirtualDisplay.Host/   stdio JSON-RPC host & admin CLI
+  EasyVirtualDisplay.Host/   stdio JSON-RPC host, admin CLI & evdctl pipe
   EasyVirtualDisplay.Vdd/    driver interop (DeviceIoControl / SetupAPI)
 vendor/parsec-vdd/   bundled virtual display driver installer
 ```
