@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using EasyVirtualDisplay.Host.Control;
 using EasyVirtualDisplay.Host.Errors;
 using EasyVirtualDisplay.Vdd.Domain;
 using EasyVirtualDisplay.Vdd.Services;
@@ -17,6 +18,9 @@ public static class StdioHost
 
         await using var session = new VddSession();
         await session.StartAsync();
+
+        using var keyedDisplays = new KeyedDisplays(session);
+        await using var controlServer = ControlServer.Start(session, keyedDisplays);
 
         await using var rpcHost = new StdioRpcHost(session);
         return await rpcHost.RunAsync();

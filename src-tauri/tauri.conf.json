@@ -41,7 +41,8 @@
     "resources": {
       "../native/EasyVirtualDisplay.Host/bin/publish/": "native",
       "../vendor/parsec-vdd/": "vendor/parsec-vdd",
-      "../resources/icon.png": "resources/icon.png"
+      "../resources/icon.png": "resources/icon.png",
+      "../resources/evdctl.cmd": "evdctl.cmd"
     },
     "windows": {
       "webviewInstallMode": {

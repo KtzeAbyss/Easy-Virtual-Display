@@ -9,7 +9,7 @@ using EasyVirtualDisplay.Vdd.Interop;
 
 namespace EasyVirtualDisplay.Vdd.Services;
 
-public sealed class VddSession : IAsyncDisposable
+public sealed class VddSession : IDisplayBackend, IAsyncDisposable
 {
     private static readonly TimeSpan KeepAliveInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan HealthCheckInterval = TimeSpan.FromSeconds(2);
@@ -152,9 +152,12 @@ public sealed class VddSession : IAsyncDisposable
         }
     }
 
-    public async Task AddDisplayAsync(CancellationToken cancellationToken = default)
+    /// <summary>Adds a display and returns its index, which the display keeps once enumerated.</summary>
+    public async Task<int> AddDisplayAsync(CancellationToken cancellationToken = default)
     {
         await StartAsync(cancellationToken);
+
+        int index;
 
         await _gate.WaitAsync(cancellationToken);
 
@@ -168,7 +171,7 @@ public sealed class VddSession : IAsyncDisposable
                 throw new ErrorExceededLimit(Core.MAX_DISPLAYS);
             }
 
-            if (!Core.AddDisplay(_handle, out _))
+            if (!Core.AddDisplay(_handle, out index))
             {
                 throw new ErrorOperationFailed(ErrorOperationFailed.Operation.AddDisplay);
             }
@@ -179,6 +182,7 @@ public sealed class VddSession : IAsyncDisposable
         }
 
         await RefreshSnapshotAsync(cancellationToken);
+        return index;
     }
 
     public async Task RemoveDisplayAsync(int? index = null, CancellationToken cancellationToken = default)
