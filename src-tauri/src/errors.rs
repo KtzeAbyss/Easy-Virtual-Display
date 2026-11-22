@@ -29,6 +29,8 @@ pub enum EasyVirtualDisplayErrorCode {
     ViewerStartFailed,
     LaunchOnLoginFailed,
     SettingsSaveFailed,
+    InvalidRequest,
+    NeedsElevation,
 }
 
 /// The wire-level error shape the renderer sees when a Tauri command rejects.

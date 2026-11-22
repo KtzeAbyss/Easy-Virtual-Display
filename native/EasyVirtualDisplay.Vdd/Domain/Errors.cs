@@ -38,13 +38,17 @@ public class ErrorOperationFailed : Exception
         AddDisplay,
         RemoveDisplay,
         Uninstall,
+        Install,
+        ApplyConfig,
     }
 
     public readonly Operation Type;
 
     public readonly string? Code;
 
-    public ErrorOperationFailed(Operation type)
+    public readonly int? Win32Error;
+
+    public ErrorOperationFailed(Operation type, int? win32Error = null)
         : base(type == Operation.AddDisplay
             ? "Failed to add a virtual display."
             : type == Operation.RemoveDisplay
@@ -52,13 +56,15 @@ public class ErrorOperationFailed : Exception
             : "Driver operation failed.")
     {
         Type = type;
+        Win32Error = win32Error;
     }
 
-    public ErrorOperationFailed(Operation type, string code, string message)
+    public ErrorOperationFailed(Operation type, string code, string message, int? win32Error = null)
         : base(message)
     {
         Type = type;
         Code = code;
+        Win32Error = win32Error;
     }
 }
 

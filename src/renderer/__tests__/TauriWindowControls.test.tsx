@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+﻿import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
+import { renderWithI18n as render } from './test-utils'
 
 interface WindowMock {
   minimize: ReturnType<typeof vi.fn>
@@ -49,21 +50,21 @@ describe('TauriWindowControls', () => {
   test('minimize button calls window.minimize()', async () => {
     const { TauriWindowControls } = await loadComponent()
     render(<TauriWindowControls />)
-    fireEvent.click(screen.getByLabelText('minimize'))
+    fireEvent.click(screen.getByLabelText('Minimize'))
     expect(win.minimize).toHaveBeenCalledTimes(1)
   })
 
   test('maximize button calls window.toggleMaximize()', async () => {
     const { TauriWindowControls } = await loadComponent()
     render(<TauriWindowControls />)
-    fireEvent.click(screen.getByLabelText('maximize'))
+    fireEvent.click(screen.getByLabelText('Maximize'))
     expect(win.toggleMaximize).toHaveBeenCalledTimes(1)
   })
 
   test('close button calls window.close() (Rust intercepts CloseRequested)', async () => {
     const { TauriWindowControls } = await loadComponent()
     render(<TauriWindowControls />)
-    fireEvent.click(screen.getByLabelText('close'))
+    fireEvent.click(screen.getByLabelText('Close'))
     expect(win.close).toHaveBeenCalledTimes(1)
   })
 
@@ -87,11 +88,11 @@ describe('TauriWindowControls', () => {
       await win.emitResize()
     })
 
-    // The component re-renders; this assertion verifies that the listener pulled the
-    // latest state from window.isMaximized().
+    // The listener pulled the latest state, so the button now offers Restore.
     await waitFor(() => {
-      expect(win.isMaximized).toHaveBeenCalledTimes(2)
+      expect(screen.getByLabelText('Restore')).toBeInTheDocument()
     })
+    expect(win.isMaximized).toHaveBeenCalledTimes(2)
   })
 
   test('cleans up the resize listener on unmount', async () => {
@@ -103,12 +104,11 @@ describe('TauriWindowControls', () => {
   })
 
   test('each control button renders its icon glyph', async () => {
-    // Regression guard: ControlButton must render {children}. A self-closing <button/>
-    // dropped the lucide icons, leaving clickable-but-glyphless (invisible) buttons.
+    // Regression guard: a glyphless caption button is clickable but invisible.
     const { TauriWindowControls } = await loadComponent()
     render(<TauriWindowControls />)
-    for (const label of ['minimize', 'maximize', 'close']) {
-      expect(screen.getByLabelText(label).querySelector('svg')).not.toBeNull()
+    for (const label of ['Minimize', 'Maximize', 'Close']) {
+      expect(screen.getByLabelText(label).textContent).not.toBe('')
     }
   })
 
@@ -120,8 +120,8 @@ describe('TauriWindowControls', () => {
     const wrapper = container.querySelector('[data-tauri-drag-region="false"]')
     expect(wrapper).not.toBeNull()
     // The minimize / maximize / close buttons must be descendants of that opt-out wrapper.
-    expect(wrapper?.querySelector('[aria-label="minimize"]')).not.toBeNull()
-    expect(wrapper?.querySelector('[aria-label="maximize"]')).not.toBeNull()
-    expect(wrapper?.querySelector('[aria-label="close"]')).not.toBeNull()
+    expect(wrapper?.querySelector('[aria-label="Minimize"]')).not.toBeNull()
+    expect(wrapper?.querySelector('[aria-label="Maximize"]')).not.toBeNull()
+    expect(wrapper?.querySelector('[aria-label="Close"]')).not.toBeNull()
   })
 })

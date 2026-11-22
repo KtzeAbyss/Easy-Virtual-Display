@@ -4,7 +4,7 @@ use std::sync::Arc;
 use serde_json::Value;
 use tokio::sync::oneshot;
 
-use crate::contracts::HostSnapshot;
+use crate::contracts::{DriverStatus, HostSnapshot};
 use crate::errors::{
     parse_rpc_error, EasyVirtualDisplayError, EasyVirtualDisplayErrorCode,
 };
@@ -165,6 +165,18 @@ impl BackendState {
         }
         self.snapshot = next.clone();
         Some(next)
+    }
+
+    /// Locally synthesize a degraded snapshot after an unexpected host exit so the
+    /// renderer/tray leave the last-known-good driver state.
+    pub fn mark_host_unavailable(&mut self) -> HostSnapshot {
+        let mut next = self.snapshot.clone();
+        next.revision = self.snapshot.revision.saturating_add(1).max(1);
+        next.status = DriverStatus::Inaccessible;
+        next.displays.clear();
+        next.active_outputs = 0;
+        self.snapshot = next.clone();
+        next
     }
 
     /// Reject every pending request with the given error. The drain takes ownership of the
@@ -393,6 +405,34 @@ mod tests {
         let details = err.details.as_ref().expect("details");
         assert_eq!(details["code"], serde_json::json!(2));
         assert_eq!(details["stderr"], serde_json::json!("boom\nstack"));
+    }
+
+    #[test]
+    fn mark_host_unavailable_bumps_revision_and_clears_displays() {
+        let mut state = BackendState::new(empty_host_snapshot());
+        let _ = state.begin_session();
+        let mut live = make_snapshot(3, "1.0");
+        live.status = DriverStatus::Ok;
+        live.displays = vec![crate::contracts::DisplaySummary {
+            index: 0,
+            identifier: 1,
+            device_name: "VDD".into(),
+            display_name: "Virtual".into(),
+            active: true,
+            current_mode: None,
+            current_orientation: crate::contracts::Orientation::Landscape,
+            supported_resolutions: vec![],
+            unsupported_current_mode: false,
+        }];
+        live.active_outputs = 1;
+        assert!(state.apply_snapshot(live).is_some());
+
+        let degraded = state.mark_host_unavailable();
+        assert_eq!(degraded.revision, 4);
+        assert_eq!(degraded.status, DriverStatus::Inaccessible);
+        assert!(degraded.displays.is_empty());
+        assert_eq!(degraded.active_outputs, 0);
+        assert_eq!(state.snapshot.status, DriverStatus::Inaccessible);
     }
 
     #[test]

@@ -222,7 +222,9 @@ fn spawn_add_display(app: AppHandle<Wry>) {
         let Some(runtime) = app.try_state::<AppRuntime>() else {
             return;
         };
-        let _ = runtime.backend.add_display().await;
+        if runtime.backend.add_display().await.is_err() {
+            flash_action_failed(&app, runtime.inner());
+        }
     });
 }
 
@@ -231,7 +233,42 @@ fn spawn_remove_last(app: AppHandle<Wry>) {
         let Some(runtime) = app.try_state::<AppRuntime>() else {
             return;
         };
-        let _ = runtime.backend.remove_display(None).await;
+        if runtime.backend.remove_display(None).await.is_err() {
+            flash_action_failed(&app, runtime.inner());
+        }
+    });
+}
+
+/// Resync the tray from the current snapshot and briefly annotate the tooltip so a
+/// silent RPC failure is still visible when the window is hidden.
+fn flash_action_failed(app: &AppHandle<Wry>, runtime: &AppRuntime) {
+    let snapshot = runtime.current_snapshot();
+    refresh(&snapshot);
+
+    let Some(cell) = HANDLES.get() else {
+        return;
+    };
+    let Ok(guard) = cell.lock() else {
+        return;
+    };
+    let lang = snapshot.effective_language;
+    let base = if snapshot.host.displays.iter().any(|d| d.active) {
+        let count = snapshot.host.displays.iter().filter(|d| d.active).count();
+        format_template(t_tray(lang, "tooltip_active"), &[("count", &count.to_string())])
+    } else {
+        t_tray(lang, "tooltip_inactive").to_string()
+    };
+    let tooltip = format!("{base}\n{}", t_tray(lang, "tooltip_action_failed"));
+    let _ = guard.tray.set_tooltip(Some(tooltip));
+
+    // Restore the normal tooltip after a short beat so the failure note does not stick.
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(4)).await;
+        let Some(runtime) = app.try_state::<AppRuntime>() else {
+            return;
+        };
+        refresh(&runtime.current_snapshot());
     });
 }
 

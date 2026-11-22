@@ -20,6 +20,8 @@ export interface ApplyAdminConfigInput {
   parentGpu: ParentGpu
 }
 
+export type ProjectLink = 'repository' | 'issues' | 'releases'
+
 export type SnapshotListener = (snapshot: AppSnapshot) => void
 
 export type Unsubscribe = () => void
@@ -45,4 +47,7 @@ export interface EasyVirtualDisplayBridge {
   /** Mirror a virtual display into a local window, or focus the window if already open. */
   openDisplayViewer(index: number): Promise<void>
   closeDisplayViewer(index: number): Promise<void>
+  /** Sync the native frame theme; resolves `true` when Mica is painted behind the page. */
+  applyWindowMaterial(dark: boolean): Promise<boolean>
+  openProjectLink(link: ProjectLink): Promise<void>
 }

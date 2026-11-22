@@ -8,12 +8,8 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import {
-  EASY_VIRTUAL_DISPLAY_ERROR_CODES,
-  type EasyVirtualDisplayErrorCode,
-  type HostSnapshot,
-  type DisplayMode
-} from '../../../shared'
+import { parseBridgeError, type HostSnapshot, type DisplayMode } from '../../../shared'
+import { toastBridgeError } from '../../lib/bridge-errors'
 import { adminConfigSchema, type AdminConfigFormData } from '../../lib/schemas'
 
 function mapCustomModes(host: HostSnapshot): DisplayMode[] {
@@ -38,29 +34,29 @@ export function useAdminConfigForm(host: HostSnapshot): AdminConfigFormResult {
   })
 
   const fieldArray = useFieldArray({ control: form.control, name: 'customModes' })
+  const { reset, formState } = form
+  const { isDirty } = formState
 
   useEffect(() => {
-    if (!form.formState.isDirty) {
-      form.reset({ customModes: mapCustomModes(host), parentGpu: host.parentGpu })
+    if (!isDirty) {
+      reset({ customModes: mapCustomModes(host), parentGpu: host.parentGpu })
     }
-  }, [host.customModes, host.parentGpu, form.reset, form.formState.isDirty, form])
+  }, [host.customModes, host.parentGpu, reset, isDirty])
 
   const onSubmit = async (data: AdminConfigFormData): Promise<void> => {
     try {
       await window.easyVirtualDisplay.applyAdminConfig(data)
       form.reset(data)
-      toast.success(t('displays:config_saved'))
+      toast.success(t('driver:config_saved'))
     } catch (e: unknown) {
-      const code = (e as Record<string, unknown>)?.code
+      const code = parseBridgeError(e)
       if (code === 'admin_cancelled') {
         toast.info(t('common:errors.admin_cancelled'))
       } else if (code === 'config_apply_timeout') {
         form.reset(data)
         toast.warning(t('common:errors.config_apply_timeout'))
-      } else if (EASY_VIRTUAL_DISPLAY_ERROR_CODES.includes(code as EasyVirtualDisplayErrorCode)) {
-        toast.error(t(`common:errors.${code}`))
       } else {
-        toast.error(t('common:operation_failed'))
+        toastBridgeError(t, e)
       }
     }
   }

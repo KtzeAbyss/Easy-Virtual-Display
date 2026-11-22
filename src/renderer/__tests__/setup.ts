@@ -16,7 +16,9 @@ const mockBridge: typeof window.easyVirtualDisplay = {
   openDisplaySettings: vi.fn().mockResolvedValue(undefined),
   showMainWindow: vi.fn().mockResolvedValue(undefined),
   openDisplayViewer: vi.fn().mockResolvedValue(undefined),
-  closeDisplayViewer: vi.fn().mockResolvedValue(undefined)
+  closeDisplayViewer: vi.fn().mockResolvedValue(undefined),
+  applyWindowMaterial: vi.fn().mockResolvedValue(false),
+  openProjectLink: vi.fn().mockResolvedValue(undefined)
 }
 
 Object.defineProperty(window, 'easyVirtualDisplay', {

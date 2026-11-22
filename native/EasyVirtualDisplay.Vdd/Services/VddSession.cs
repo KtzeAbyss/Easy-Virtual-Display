@@ -173,7 +173,9 @@ public sealed class VddSession : IDisplayBackend, IAsyncDisposable
 
             if (!Core.AddDisplay(_handle, out index))
             {
-                throw new ErrorOperationFailed(ErrorOperationFailed.Operation.AddDisplay);
+                throw new ErrorOperationFailed(
+                    ErrorOperationFailed.Operation.AddDisplay,
+                    Core.ConsumeLastWin32Error());
             }
         }
         finally
@@ -206,7 +208,9 @@ public sealed class VddSession : IDisplayBackend, IAsyncDisposable
 
             if (!Core.RemoveDisplay(_handle, targetDisplay.DisplayIndex))
             {
-                throw new ErrorOperationFailed(ErrorOperationFailed.Operation.RemoveDisplay);
+                throw new ErrorOperationFailed(
+                    ErrorOperationFailed.Operation.RemoveDisplay,
+                    Core.ConsumeLastWin32Error());
             }
 
             changed = true;
@@ -240,7 +244,9 @@ public sealed class VddSession : IDisplayBackend, IAsyncDisposable
             {
                 if (!Core.RemoveDisplay(_handle, displays[i].DisplayIndex))
                 {
-                    throw new ErrorOperationFailed(ErrorOperationFailed.Operation.RemoveDisplay);
+                    throw new ErrorOperationFailed(
+                        ErrorOperationFailed.Operation.RemoveDisplay,
+                        Core.ConsumeLastWin32Error());
                 }
 
                 changed = true;

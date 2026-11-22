@@ -11,4 +11,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="EasyVirtualDisplay.Vdd.Tests" />
+  </ItemGroup>
+
 </Project>

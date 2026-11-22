@@ -28,7 +28,7 @@ describe('DisplaySettingsSection', () => {
     )
 
     expect(
-      screen.getByText('Could not add the fallback display: Display limit exceeded')
+      screen.getByText('Could not add the fallback display: The display limit has been reached')
     ).toBeInTheDocument()
   })
 })

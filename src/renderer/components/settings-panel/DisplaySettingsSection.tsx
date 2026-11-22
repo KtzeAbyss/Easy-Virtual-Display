@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { CircleX } from 'lucide-react'
 import type { AppSettings, EasyVirtualDisplayErrorCode } from '../../../shared'
-import { SectionTitle, SettingRow, Switch } from './SettingsPrimitives'
+import { Section, SettingRow } from '../layout/Page'
+import { Switch } from '../ui/switch'
 
 interface DisplaySettingsSectionProps {
   settings: AppSettings
@@ -17,41 +19,42 @@ export function DisplaySettingsSection({
 }: DisplaySettingsSectionProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <section>
-      <SectionTitle>{t('settings:display_title')}</SectionTitle>
-      <div className="bg-card border border-border rounded-lg divide-y divide-border">
-        <div className="px-4">
-          <SettingRow
-            label={t('settings:fallback_display')}
-            description={t('settings:fallback_display_desc')}
-          >
-            <Switch
-              checked={settings.fallbackDisplay}
-              onCheckedChange={(v) => onUpdate({ fallbackDisplay: v })}
-              disabled={disabled}
-            />
-          </SettingRow>
-          {fallbackError && (
-            <p className="pb-2.5 text-xs text-destructive">
+    <Section title={t('settings:display_title')}>
+      <SettingRow
+        label={t('settings:fallback_display')}
+        description={t('settings:fallback_display_desc')}
+        footer={
+          fallbackError && (
+            <p
+              role="alert"
+              className="flex items-center gap-2 border-t bg-infobar-error px-4 py-2.5 text-xs"
+            >
+              <CircleX className="size-3.5 shrink-0 text-status-error" aria-hidden />
               {t('settings:fallback_display_failed', {
                 reason: t(`common:errors.${fallbackError}`)
               })}
             </p>
-          )}
-        </div>
-        <div className="px-4">
-          <SettingRow
-            label={t('settings:keep_screen_on')}
-            description={t('settings:keep_screen_on_desc')}
-          >
-            <Switch
-              checked={settings.keepScreenOn}
-              onCheckedChange={(v) => onUpdate({ keepScreenOn: v })}
-              disabled={disabled}
-            />
-          </SettingRow>
-        </div>
-      </div>
-    </section>
+          )
+        }
+      >
+        <Switch
+          aria-label={t('settings:fallback_display')}
+          checked={settings.fallbackDisplay}
+          onCheckedChange={(v) => onUpdate({ fallbackDisplay: v })}
+          disabled={disabled}
+        />
+      </SettingRow>
+      <SettingRow
+        label={t('settings:keep_screen_on')}
+        description={t('settings:keep_screen_on_desc')}
+      >
+        <Switch
+          aria-label={t('settings:keep_screen_on')}
+          checked={settings.keepScreenOn}
+          onCheckedChange={(v) => onUpdate({ keepScreenOn: v })}
+          disabled={disabled}
+        />
+      </SettingRow>
+    </Section>
   )
 }

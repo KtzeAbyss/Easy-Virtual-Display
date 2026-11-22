@@ -67,7 +67,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('createTauriBridge → 11-method Seam A surface', () => {
+describe('createTauriBridge → Seam A surface', () => {
   test('each method maps to the expected snake_case Tauri command', async () => {
     const { createTauriBridge } = await loadBridge()
     const bridge = createTauriBridge()
@@ -84,6 +84,10 @@ describe('createTauriBridge → 11-method Seam A surface', () => {
     await bridge.updateSettings({ keepScreenOn: true })
     await bridge.openDisplaySettings()
     await bridge.showMainWindow()
+    await bridge.openDisplayViewer(1)
+    await bridge.closeDisplayViewer(1)
+    await bridge.applyWindowMaterial(true)
+    await bridge.openProjectLink('issues')
 
     const cmds = runtime.invokeCalls.map((c) => c.cmd)
     expect(cmds).toEqual([
@@ -98,8 +102,14 @@ describe('createTauriBridge → 11-method Seam A surface', () => {
       'apply_admin_config',
       'update_settings',
       'open_display_settings',
-      'show_main_window'
+      'show_main_window',
+      'open_display_viewer',
+      'close_display_viewer',
+      'apply_window_material',
+      'open_project_link'
     ])
+    expect(runtime.invokeCalls.at(-2)?.args).toEqual({ dark: true })
+    expect(runtime.invokeCalls.at(-1)?.args).toEqual({ link: 'issues' })
   })
 
   test('setDisplayMode wraps the payload under `input`', async () => {

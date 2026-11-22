@@ -7,7 +7,9 @@ mod elevator;
 mod errors;
 mod events;
 mod host;
+mod initial_display;
 mod install_prompt;
+mod platform;
 mod quit;
 mod settings_store;
 mod shell_locales;
@@ -65,6 +67,8 @@ pub fn run() {
             commands::show_main_window,
             commands::open_display_viewer,
             commands::close_display_viewer,
+            commands::apply_window_material,
+            commands::open_project_link,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
@@ -135,6 +139,12 @@ pub fn run() {
                             &host_clone,
                         )
                         .await;
+                        initial_display::maybe_ensure_initial_display(
+                            &handle,
+                            runtime.inner(),
+                            &host_clone,
+                        )
+                        .await;
                     }
                 });
             }));
@@ -172,6 +182,11 @@ pub fn run() {
                 };
                 if let Err(e) = runtime.backend.start().await {
                     eprintln!("native host failed to start: {e}");
+                    // Surface the failure through the same snapshot path the renderer
+                    // already watches (status becomes inaccessible once the host exits /
+                    // never publishes). Retry remains available via getSnapshot.
+                    let snapshot = runtime.republish_snapshot(&start_handle);
+                    tray::refresh(&snapshot);
                 }
             });
 

@@ -114,6 +114,18 @@ internal static unsafe class Core
     // How long a timed-out request may take to wind down after CancelIoEx.
     private const int CancelGraceMilliseconds = 1000;
 
+    /// <summary>Win32 error from the most recent failed <see cref="IoControl"/> on this thread.</summary>
+    [ThreadStatic]
+    private static int _lastWin32Error;
+
+    /// <summary>Returns and clears the last IOCTL Win32 error for this thread, if any.</summary>
+    public static int? ConsumeLastWin32Error()
+    {
+        var code = _lastWin32Error;
+        _lastWin32Error = 0;
+        return code == 0 ? null : code;
+    }
+
     /// <summary>
     /// Everything the driver may write to until the request completes. It lives in native
     /// memory because completion can come after the caller has timed out and returned.
@@ -137,6 +149,8 @@ internal static unsafe class Core
 
         request->Overlapped.hEvent = Native.CreateEvent(null, true, false, null);
 
+        _lastWin32Error = 0;
+
         bool sent = Native.DeviceIoControl(handle, (uint)code,
             request->Input, InputLength,
             result != null ? &request->Output : null, result != null ? sizeof(int) : 0,
@@ -144,6 +158,7 @@ internal static unsafe class Core
 
         if (!sent && Marshal.GetLastWin32Error() != ERROR_IO_PENDING)
         {
+            _lastWin32Error = Marshal.GetLastWin32Error();
             FreeRequest(request);
             return false;
         }
@@ -161,11 +176,17 @@ internal static unsafe class Core
             if (!success && Marshal.GetLastWin32Error() == WAIT_TIMEOUT)
             {
                 // The driver may still write to the request; leak it rather than free it.
+                _lastWin32Error = WAIT_TIMEOUT;
 #if DEBUG
                 Debug.WriteLine($"[D] IoControl: {code} did not finish after cancel; abandoning it");
 #endif
                 return false;
             }
+        }
+
+        if (!success)
+        {
+            _lastWin32Error = Marshal.GetLastWin32Error();
         }
 
 #if DEBUG

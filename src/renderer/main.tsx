@@ -9,7 +9,12 @@ import App from './App'
 import { createTauriBridge } from './bridge/tauri-bridge'
 import { initRendererI18n } from './i18n'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+    mutations: { retry: false }
+  }
+})
 
 // Install the shell bridge before i18n boots, so `window.easyVirtualDisplay.getSnapshot()`
 // resolves correctly during init. (Tests stub `window.easyVirtualDisplay` directly in
@@ -22,7 +27,18 @@ initRendererI18n().then((i18n) => {
       <I18nextProvider i18n={i18n}>
         <QueryClientProvider client={queryClient}>
           <App />
-          <Toaster position="bottom-right" richColors />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: 'var(--popover)',
+                color: 'var(--popover-foreground)',
+                borderColor: 'var(--border)',
+                borderRadius: '8px',
+                fontFamily: 'inherit'
+              }
+            }}
+          />
         </QueryClientProvider>
       </I18nextProvider>
     </StrictMode>

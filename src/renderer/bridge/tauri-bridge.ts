@@ -7,6 +7,7 @@ import {
   type ApplyAdminConfigInput,
   type EasyVirtualDisplayBridge,
   type EffectiveLanguage,
+  type ProjectLink,
   type SetDisplayModeInput,
   type SnapshotListener,
   type Unsubscribe
@@ -35,8 +36,9 @@ function syncSubscribe<T>(event: string, callback: (payload: T) => void): Unsubs
         unlistenFn = fn
       }
     })
-    .catch(() => {
-      // Tauri internals unavailable — nothing to clean up.
+    .catch((err: unknown) => {
+      // Tauri internals unavailable — subscription will not deliver updates.
+      console.error(`Failed to subscribe to ${event}`, err)
     })
 
   return () => {
@@ -67,6 +69,8 @@ export function createTauriBridge(): EasyVirtualDisplayBridge {
     openDisplaySettings: () => invoke<void>('open_display_settings'),
     showMainWindow: () => invoke<void>('show_main_window'),
     openDisplayViewer: (index: number) => invoke<void>('open_display_viewer', { index }),
-    closeDisplayViewer: (index: number) => invoke<void>('close_display_viewer', { index })
+    closeDisplayViewer: (index: number) => invoke<void>('close_display_viewer', { index }),
+    applyWindowMaterial: (dark: boolean) => invoke<boolean>('apply_window_material', { dark }),
+    openProjectLink: (link: ProjectLink) => invoke<void>('open_project_link', { link })
   }
 }

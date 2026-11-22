@@ -30,6 +30,8 @@ const REMOVE_ALL_DISPLAYS_RPC_METHOD: &str = "host.removeAllDisplays";
 const SET_DISPLAY_MODE_RPC_METHOD: &str = "host.setDisplayMode";
 
 const STOP_TIMEOUT: Duration = Duration::from_secs(3);
+/// Per-request deadline for stdio JSON-RPC. Host hang previously parked tray/UI forever.
+const RPC_TIMEOUT: Duration = Duration::from_secs(60);
 
 struct WriterRequest {
     id: i64,
@@ -189,6 +191,7 @@ impl StdioJsonRpcBackend {
             stopped_tx,
             self.state.clone(),
             self.handles.clone(),
+            self.snapshot_broadcaster.clone(),
             session_id,
         ));
 
@@ -395,14 +398,26 @@ impl StdioJsonRpcBackend {
             ));
         }
 
-        let raw = match resp_rx.await {
-            Ok(Ok(value)) => value,
-            Ok(Err(err)) => return Err(err),
-            Err(_) => {
+        let raw = match timeout(RPC_TIMEOUT, resp_rx).await {
+            Ok(Ok(Ok(value))) => value,
+            Ok(Ok(Err(err))) => return Err(err),
+            Ok(Err(_)) => {
                 return Err(EasyVirtualDisplayError::new(
                     EasyVirtualDisplayErrorCode::NativeHostUnavailable,
                     "The native host dropped the response channel.",
                 ))
+            }
+            Err(_) => {
+                {
+                    let mut state = self.state.lock().await;
+                    state.remove_pending(id);
+                }
+                // Host may be wedged; tear it down so the next call can respawn.
+                let _ = self.stop().await;
+                return Err(EasyVirtualDisplayError::new(
+                    EasyVirtualDisplayErrorCode::NativeHostUnavailable,
+                    format!("Native host RPC timed out after {RPC_TIMEOUT:?} ({method})."),
+                ));
             }
         };
 
@@ -520,16 +535,17 @@ async fn exit_task(
     stopped_tx: oneshot::Sender<()>,
     state: Arc<Mutex<BackendState>>,
     handles: Arc<Mutex<Option<RunningHandles>>>,
+    broadcaster: Arc<std::sync::Mutex<Option<SnapshotBroadcaster>>>,
     session_id: u64,
 ) {
-    let exit_status = tokio::select! {
-        result = child.wait() => result,
+    let (exit_status, intentional_stop) = tokio::select! {
+        result = child.wait() => (result, false),
         _ = kill_rx => {
             // Best-effort graceful: ask the child to die, then give it a moment.
             let _ = child.kill().await;
             // child.kill() also reaps via wait, but we wait again to be sure.
             sleep(Duration::from_millis(50)).await;
-            child.wait().await
+            (child.wait().await, true)
         }
     };
 
@@ -540,18 +556,34 @@ async fn exit_task(
         state_guard.make_exit_error(code, None)
     };
 
-    {
+    let unexpected_snapshot = {
         let mut state_guard = state.lock().await;
         if state_guard.active_session_id == session_id {
             state_guard.reject_all_pending(exit_err);
+            if !intentional_stop {
+                // Push a degraded snapshot so the UI/tray leave the last-known-good state.
+                Some(state_guard.mark_host_unavailable())
+            } else {
+                None
+            }
+        } else {
+            None
         }
-    }
+    };
 
     {
         let mut handles_guard = handles.lock().await;
         if let Some(h) = handles_guard.as_ref() {
             if h.session_id == session_id {
                 *handles_guard = None;
+            }
+        }
+    }
+
+    if let Some(snap) = unexpected_snapshot {
+        if let Ok(guard) = broadcaster.lock() {
+            if let Some(b) = guard.as_ref() {
+                b(session_id, &snap);
             }
         }
     }

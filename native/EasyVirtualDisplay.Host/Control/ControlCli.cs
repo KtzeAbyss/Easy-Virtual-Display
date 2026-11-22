@@ -89,7 +89,8 @@ internal static class ControlCli
         return await ReportAsync(request, response);
     }
 
-    private static ControlRequest Parse(IReadOnlyList<string> args)
+    /// <summary>Visible to unit tests via InternalsVisibleTo.</summary>
+    internal static ControlRequest Parse(IReadOnlyList<string> args)
     {
         if (args.Count == 0)
         {

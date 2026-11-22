@@ -54,19 +54,16 @@ public static class HostErrorMapper
             {
                 Code = ex.Code ?? "driver_error",
                 Message = ex.Message,
-                Details = new Dictionary<string, object?>
-                {
-                    ["operation"] = ex.Type.ToString(),
-                },
+                Details = BuildOperationDetails(ex),
             },
             ArgumentException ex => new HostError
             {
-                Code = "driver_error",
+                Code = "invalid_request",
                 Message = ex.Message,
             },
             JsonException ex => new HostError
             {
-                Code = "driver_error",
+                Code = "invalid_request",
                 Message = $"Invalid JSON payload: {ex.Message}",
             },
             _ => new HostError
@@ -82,6 +79,20 @@ public static class HostErrorMapper
     public static string ToMessage(Exception exception)
     {
         return JsonSerializer.Serialize(Normalize(exception), HostJsonOptions.Default);
+    }
+
+    private static Dictionary<string, object?> BuildOperationDetails(ErrorOperationFailed ex)
+    {
+        var details = new Dictionary<string, object?>
+        {
+            ["operation"] = ex.Type.ToString(),
+        };
+        if (ex.Win32Error is int win32)
+        {
+            details["win32Error"] = win32;
+        }
+
+        return details;
     }
 
     private static HostError FromDriverStatus(DriverState status)

@@ -58,6 +58,8 @@ public static class AdminCli
 
     private static Task<int> RunApplyAdminConfigAsync(IReadOnlyList<string> args)
     {
+        EnsureElevated(ErrorOperationFailed.Operation.ApplyConfig);
+
         var input = ParseApplyAdminConfigArgs(args);
         var configurationService = new VddConfigurationService();
 
@@ -71,11 +73,26 @@ public static class AdminCli
 
     private static async Task<int> RunInstallDriverAsync(IReadOnlyList<string> args)
     {
+        EnsureElevated(ErrorOperationFailed.Operation.Install);
+
         var installerPath = ParseInstallDriverArgs(args);
         var result = await InstallDriverAsync(installerPath);
 
         Console.Out.WriteLine(JsonSerializer.Serialize(result, HostJsonOptions.Default));
         return 0;
+    }
+
+    private static void EnsureElevated(ErrorOperationFailed.Operation operation)
+    {
+        if (IsProcessElevated())
+        {
+            return;
+        }
+
+        throw new ErrorOperationFailed(
+            operation,
+            "needs_elevation",
+            "Administrator privileges are required.");
     }
 
     private static async Task<int> RunUninstallDriverAsync(IReadOnlyList<string> args)

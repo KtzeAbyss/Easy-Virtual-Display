@@ -12,6 +12,8 @@ use crate::contracts::{default_app_settings, AppSettings};
 
 pub const SETTINGS_STORE_PATH: &str = "settings.json";
 pub const SETTINGS_KEY: &str = "settings";
+/// Separate from [`AppSettings`]: first-launch "ensure one virtual display" bookkeeping.
+pub const INITIAL_DISPLAY_ENSURED_KEY: &str = "initialDisplayEnsured";
 
 /// Read the persisted settings, or return [`default_app_settings`] when the store has not
 /// been written yet (first-launch path).
@@ -32,6 +34,27 @@ pub fn save<R: Runtime>(app: &AppHandle<R>, settings: &AppSettings) -> Result<()
     let value =
         serde_json::to_value(settings).map_err(|e| format!("failed to serialize settings: {e}"))?;
     store.set(SETTINGS_KEY, value);
+    store
+        .save()
+        .map_err(|e| format!("failed to persist store: {e}"))?;
+    Ok(())
+}
+
+pub fn initial_display_ensured<R: Runtime>(app: &AppHandle<R>) -> bool {
+    let Ok(store) = app.store(SETTINGS_STORE_PATH) else {
+        return false;
+    };
+    store
+        .get(INITIAL_DISPLAY_ENSURED_KEY)
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
+pub fn set_initial_display_ensured<R: Runtime>(app: &AppHandle<R>, ensured: bool) -> Result<(), String> {
+    let store = app
+        .store(SETTINGS_STORE_PATH)
+        .map_err(|e| format!("failed to open store: {e}"))?;
+    store.set(INITIAL_DISPLAY_ENSURED_KEY, serde_json::Value::Bool(ensured));
     store
         .save()
         .map_err(|e| format!("failed to persist store: {e}"))?;

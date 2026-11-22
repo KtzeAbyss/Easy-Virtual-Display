@@ -74,6 +74,8 @@ describe('shell.json locale parity', () => {
       'quit',
       'tooltip_active',
       'tooltip_inactive',
+      'tooltip_fallback_failed',
+      'tooltip_action_failed',
       'quit_title',
       'quit_message',
       'quit_detail',
