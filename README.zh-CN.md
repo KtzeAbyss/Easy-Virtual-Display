@@ -18,9 +18,23 @@ Easy Virtual Display 是一款 Windows 桌面应用，让你通过友好的界�
 - **自定义分辨率模式** —— 最多可定义 5 组驱动对外提供的自定义模式。
 - **指定 GPU** —— 将虚拟显示器绑定到指定的父级 GPU（自动 / NVIDIA / AMD）。
 - **状态一目了然** —— 驱动状态、驱动版本、最大显示器数量以及当前活动显示器数。
-- **贴心的行为设置** —— 开机自启、关闭到托盘、启动时隐藏到托盘、显示器活动时*保持屏幕常亮*，以及没有任何显示器工作时自动顶上的*兜底显示器*。
+- **贴心的行为设置** —— 开机自启、关闭到托盘、启动时隐藏到托盘、显示器活动时*保持屏幕常亮*，以及没有任何显示器工作时自动顶上的*回退显示器*。
 - **命令行控制** —— 用 `evdctl` 在脚本里增删显示器，比如作为 Sunshine 的准备命令。
 - **精致的体验** —— 浅色 / 深色 / 跟随系统主题，界面支持 English / 简体中文。
+
+## 界面预览
+
+**显示器** — 添加并配置虚拟显示器
+
+<img src="docs/screenshots/zh-displays.png" alt="显示器页" width="720" />
+
+**驱动** — 状态、自定义模式与维护
+
+<img src="docs/screenshots/zh-driver.png" alt="驱动页" width="720" />
+
+**设置** — 启动行为、显示与外观
+
+<img src="docs/screenshots/zh-settings.png" alt="设置页" width="720" />
 
 ## 命令行
 
@@ -53,7 +67,7 @@ Easy Virtual Display 由三个协同工作的层次组成：
 
 | 层次 | 技术 | 职责 |
 | --- | --- | --- |
-| **外壳** | Tauri 2（Rust）+ 系统 WebView2 | 窗口、系统托盘、系统集成（自启、防休眠、兜底显示器）、驱动生命周期与权限提升。 |
+| **外壳** | Tauri 2（Rust）+ 系统 WebView2 | 窗口、系统托盘、系统集成（自启、防休眠、回退显示器）、驱动生命周期与权限提升。 |
 | **渲染层** | React 19 + TypeScript（Vite） | 桌面界面——TanStack Query、react-hook-form + Zod、Tailwind CSS、Radix 组件与 i18next。 |
 | **原生宿主** | .NET（C#） | 通过 `DeviceIoControl` / SetupAPI / CfgMgr32 与虚拟显示驱动通信，并经由 stdio JSON-RPC 协议暴露给外壳、经由命名管道暴露给 `evdctl`。 |
 

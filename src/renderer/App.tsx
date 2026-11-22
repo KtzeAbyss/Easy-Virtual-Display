@@ -113,7 +113,7 @@ function App(): React.JSX.Element {
           key={page}
           className="min-h-0 flex-1 overflow-y-auto rounded-tl-lg border-t border-l bg-layer"
         >
-          <div className="mx-auto w-full max-w-[880px] animate-in px-8 pt-6 pb-10 duration-200 fade-in-0 slide-in-from-bottom-1">
+          <div className="mx-auto w-full max-w-[880px] animate-in px-5 pt-3 pb-4 duration-200 fade-in-0 slide-in-from-bottom-1">
             {content}
           </div>
         </main>

@@ -59,7 +59,7 @@ function Field({
 }): React.JSX.Element {
   const id = useId()
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-xs text-muted-foreground">
         {label}
       </label>
@@ -158,8 +158,8 @@ export function DisplayCard({ display, driverOk, viewerOpen }: DisplayCardProps)
   const viewerDisabled = viewerOpen ? toggleViewer.isPending : isDisabled || !display.active
 
   return (
-    <article className="rounded-lg border bg-card">
-      <div className="flex items-center gap-3 px-4 py-3">
+    <article className="rounded-md border bg-card">
+      <div className="flex items-center gap-2.5 px-3.5 py-2">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2">
             <Tooltip content={t('displays:device_name', { name: display.deviceName })}>
@@ -180,6 +180,7 @@ export function DisplayCard({ display, driverOk, viewerOpen }: DisplayCardProps)
         <Tooltip content={t('displays:viewer_hint')}>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => toggleViewer.mutate(!viewerOpen)}
             disabled={viewerDisabled}
           >
@@ -192,7 +193,7 @@ export function DisplayCard({ display, driverOk, viewerOpen }: DisplayCardProps)
           onRemove={() => removeDisplay.mutate(display.index)}
         />
       </div>
-      <div className="grid grid-cols-3 gap-3 border-t px-4 pt-2.5 pb-3.5">
+      <div className="grid grid-cols-3 gap-2.5 border-t px-3.5 pt-2 pb-2.5">
         <Field label={t('displays:resolution')}>
           {(id) => (
             <Select value={currentResKey} onValueChange={handleResolutionChange} disabled={isDisabled}>

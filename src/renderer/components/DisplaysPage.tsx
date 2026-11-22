@@ -102,15 +102,15 @@ function EmptyState({
   const { t } = useTranslation()
   const needsDriver = snapshot.host.status === 'not_installed'
   return (
-    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-14 text-center">
-      <Monitor className="mb-2 size-10 text-muted-foreground" strokeWidth={1.25} aria-hidden />
-      <p className="font-display text-base font-semibold">
+    <div className="flex flex-col items-center gap-1.5 rounded-md border border-dashed px-6 py-8 text-center">
+      <Monitor className="mb-1 size-8 text-muted-foreground" strokeWidth={1.25} aria-hidden />
+      <p className="font-display text-sm font-semibold">
         {t(needsDriver ? 'displays:empty_no_driver_title' : 'displays:empty_title')}
       </p>
-      <p className="max-w-sm text-sm text-muted-foreground">
+      <p className="max-w-sm text-xs text-muted-foreground">
         {t(needsDriver ? 'displays:empty_no_driver_description' : 'displays:empty_description')}
       </p>
-      <div className="mt-3">
+      <div className="mt-2">
         {needsDriver ? (
           <InstallDriverButton />
         ) : (

@@ -157,11 +157,11 @@ export function CustomModesForm({ adminForm }: { adminForm: AdminForm }): React.
         label={t('driver:custom_resolutions')}
         description={t('driver:custom_modes_hint')}
         footer={
-          <div className="border-t px-4 py-3">
+          <div className="border-t px-3.5 py-2">
             {fields.length === 0 ? (
               <p className="text-xs text-muted-foreground">{t('driver:no_custom_modes')}</p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-1.5">
                 {fields.map((field, i) => (
                   <ModeRow
                     key={field.id}
@@ -192,7 +192,7 @@ export function CustomModesForm({ adminForm }: { adminForm: AdminForm }): React.
       >
         <ParentGpuSelect control={form.control} disabled={isSubmitting} />
       </SettingRow>
-      <div className="flex items-center justify-end gap-2 pt-2">
+      <div className="flex items-center justify-end gap-2 pt-1.5">
         <span className="mr-auto text-xs text-muted-foreground">{t('driver:uac_note')}</span>
         {isDirty && (
           <Button

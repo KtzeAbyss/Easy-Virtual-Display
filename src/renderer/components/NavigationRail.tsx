@@ -55,7 +55,7 @@ function NavItem({
             <span className={cn('absolute -top-0.5 -right-0.5 size-2 rounded-full', badge)} />
           )}
         </span>
-        <span className="hidden truncate min-[880px]:inline">{label}</span>
+        <span className="hidden truncate min-[840px]:inline">{label}</span>
       </button>
     </li>
   )
@@ -77,7 +77,7 @@ export function NavigationRail({
   return (
     <nav
       aria-label={t('common:nav_label')}
-      className="flex w-14 shrink-0 flex-col justify-between px-1.5 pt-1 pb-2 min-[880px]:w-[220px]"
+      className="flex w-14 shrink-0 flex-col justify-between px-1.5 pt-1 pb-2 min-[840px]:w-[200px]"
     >
       <ul className="flex flex-col gap-0.5">
         {PRIMARY.map(({ page: p, icon }) => (

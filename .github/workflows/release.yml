@@ -26,7 +26,7 @@ permissions:
 
 # Never cancel a release build halfway through uploading.
 concurrency:
-  group: release-${{ github.ref }}-${{ github.run_id }}
+  group: release-${{ github.event.inputs.version || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -36,41 +36,64 @@ jobs:
     timeout-minutes: 45
     env:
       DOTNET_RID: win-x64
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      tag: ${{ steps.version.outputs.tag }}
-      artifact: ${{ steps.bundle.outputs.artifact }}
     steps:
       # Third-party actions are pinned to a commit; the comment names the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Needed so a dispatch release can push the version-bump commit + tag.
+          # Needed so a dispatch release can push the version-bump commit.
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip duplicate tag build
+        id: guard
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # workflow_dispatch create_release creates the tag via `gh release create`.
+          # That fires this tag workflow — skip if the installer is already attached.
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          asset="EasyVirtualDisplay-x64-setup-${tag#v}.exe"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            if gh release view "$tag" --json assets -q '.assets[].name' | grep -Fxq "$asset"; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "Release already has $asset — skipping duplicate tag build."
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.guard.outputs.skip != 'true'
         with:
           node-version: 22
           cache: npm
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        if: steps.guard.outputs.skip != 'true'
         with:
           dotnet-version: 8.0.x
 
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        if: steps.guard.outputs.skip != 'true'
         with:
           toolchain: stable
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        if: steps.guard.outputs.skip != 'true'
         with:
           workspaces: src-tauri -> target
 
-      - run: npm ci
+      - if: steps.guard.outputs.skip != 'true'
+        run: npm ci
 
       - name: Resolve version
         id: version
+        if: steps.guard.outputs.skip != 'true'
         shell: bash
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INPUT_VERSION: ${{ github.event.inputs.version }}
           INPUT_BUMP: ${{ github.event.inputs.bump }}
           CREATE_RELEASE: ${{ github.event.inputs.create_release }}
@@ -78,9 +101,9 @@ jobs:
           set -euo pipefail
 
           if [ "${GITHUB_REF_TYPE}" = tag ]; then
-            version="${GITHUB_REF_NAME#v}"
-            node scripts/set-version.mjs --check "$version" >/dev/null
+            version="$(node scripts/set-version.mjs --check "${GITHUB_REF_NAME#v}")"
             tag="$GITHUB_REF_NAME"
+            sha="$(git rev-parse HEAD)"
           else
             if [ -n "${INPUT_VERSION:-}" ]; then
               version="$(node scripts/set-version.mjs "$INPUT_VERSION")"
@@ -89,32 +112,42 @@ jobs:
             fi
             tag="v${version}"
 
+            if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "::error::Tag ${tag} already exists."
+              exit 1
+            fi
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "::error::GitHub release ${tag} already exists."
+              exit 1
+            fi
+
             if [ "${CREATE_RELEASE}" = true ]; then
-              if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
-                echo "::error::Tag ${tag} already exists."
-                exit 1
-              fi
               git config user.name "github-actions[bot]"
               git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+              git add package.json package-lock.json \
+                src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
               git commit -m "chore: release ${tag}"
-              git tag "$tag"
               git push origin "HEAD:${GITHUB_REF_NAME}"
-              git push origin "$tag"
             fi
+            sha="$(git rev-parse HEAD)"
           fi
 
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-          echo "Resolved version ${version} (tag ${tag})"
+          {
+            echo "version=${version}"
+            echo "tag=${tag}"
+            echo "sha=${sha}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved version ${version} (tag ${tag} @ ${sha})"
 
       # beforeBuildCommand fetches and verifies the driver installer, then builds the
       # native host and the web assets.
       - name: Build installer
+        if: steps.guard.outputs.skip != 'true'
         run: npx tauri build --ci
 
       - name: Rename installer (version suffix)
         id: bundle
+        if: steps.guard.outputs.skip != 'true'
         shell: bash
         env:
           APP_VERSION: ${{ steps.version.outputs.version }}
@@ -135,10 +168,9 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "artifact=${dst}" >> "$GITHUB_OUTPUT"
-          echo "dir=${PWD}" >> "$GITHUB_OUTPUT"
 
       - name: Upload workflow artifact
-        if: github.event_name == 'workflow_dispatch' && inputs.create_release != true
+        if: steps.guard.outputs.skip != 'true' && github.event_name == 'workflow_dispatch' && inputs.create_release != true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: EasyVirtualDisplay-x64-setup-${{ steps.version.outputs.version }}
@@ -148,12 +180,13 @@ jobs:
           if-no-files-found: error
 
       - name: Publish draft release
-        if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.create_release)
+        if: steps.guard.outputs.skip != 'true' && (github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.create_release))
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.version.outputs.tag }}
           VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.version.outputs.sha }}
           ARTIFACT: ${{ steps.bundle.outputs.artifact }}
         run: |
           set -euo pipefail
@@ -165,7 +198,9 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$ARTIFACT" SHA256SUMS.txt --clobber
           else
+            # Creating the tag here (not earlier) avoids a parallel rebuild race.
             gh release create "$TAG" "$ARTIFACT" SHA256SUMS.txt \
+              --target "$SHA" \
               --draft \
               --title "Easy Virtual Display ${TAG}" \
               --generate-notes \

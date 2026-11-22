@@ -22,7 +22,8 @@
     "build:web": "vite build",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "npm run build:native && tauri build"
+    "tauri:build": "npm run build:native && tauri build",
+    "version:set": "node scripts/set-version.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

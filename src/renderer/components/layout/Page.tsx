@@ -10,9 +10,9 @@ export function PageHeader({
   actions?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <header className="flex min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2 pb-5">
-      <div className="flex min-w-0 items-baseline gap-3">
-        <h1 className="font-display text-[28px] leading-9 font-semibold">{title}</h1>
+    <header className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pb-3">
+      <div className="flex min-w-0 items-baseline gap-2.5">
+        <h1 className="font-display text-[22px] leading-7 font-semibold">{title}</h1>
         {meta}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -31,7 +31,7 @@ export function Section({
 }): React.JSX.Element {
   return (
     <section className={cn('flex flex-col gap-1', className)}>
-      {title && <h2 className="pt-4 pb-1.5 text-sm font-semibold">{title}</h2>}
+      {title && <h2 className="pt-2 pb-0.5 text-[13px] font-semibold">{title}</h2>}
       {children}
     </section>
   )
@@ -51,11 +51,11 @@ export function SettingRow({
 }): React.JSX.Element {
   return (
     <div className="rounded-md border bg-card">
-      <div className="flex min-h-[60px] items-center gap-4 px-4 py-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-sm">{label}</span>
+      <div className="flex min-h-10 items-center gap-3 px-3.5 py-1.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-px">
+          <span className="text-sm leading-5">{label}</span>
           {description && (
-            <span className="text-xs leading-4 text-muted-foreground">{description}</span>
+            <span className="truncate text-xs leading-4 text-muted-foreground">{description}</span>
           )}
         </div>
         {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}

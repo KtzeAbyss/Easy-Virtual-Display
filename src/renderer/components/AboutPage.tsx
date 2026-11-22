@@ -18,17 +18,17 @@ export function AboutPage(): React.JSX.Element {
     <>
       <PageHeader title={t('common:nav.about')} />
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-4 rounded-md border bg-card px-4 py-4">
-          <img src={appIcon} alt="" className="size-12" draggable={false} />
+        <div className="flex items-center gap-3 rounded-md border bg-card px-3.5 py-3">
+          <img src={appIcon} alt="" className="size-10" draggable={false} />
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="font-display text-base font-semibold">{t('common:app_title')}</span>
+            <span className="font-display text-sm font-semibold">{t('common:app_title')}</span>
             <span className="selectable text-xs text-muted-foreground tabular-nums">
               {t('common:about.version', { version: __APP_VERSION__ })}
             </span>
             <span className="text-xs text-muted-foreground">{t('common:about.description')}</span>
           </div>
         </div>
-        <p className="px-0.5 pt-1 text-xs text-muted-foreground">{t('common:about.driver_credit')}</p>
+        <p className="px-0.5 text-xs text-muted-foreground">{t('common:about.driver_credit')}</p>
 
         <Section title={t('common:about.links_title')}>
           <div className="flex flex-wrap gap-2">
@@ -36,6 +36,7 @@ export function AboutPage(): React.JSX.Element {
               <Button
                 key={link}
                 variant="outline"
+                size="sm"
                 onClick={() => void window.easyVirtualDisplay.openProjectLink(link)}
               >
                 {t(`common:about.${link}`)}

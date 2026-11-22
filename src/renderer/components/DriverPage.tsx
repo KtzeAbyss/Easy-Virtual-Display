@@ -8,9 +8,9 @@ import { useAdminConfigForm } from './driver/useAdminConfigForm'
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }): React.JSX.Element {
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2.5">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="selectable text-sm tabular-nums">{value}</dd>
+    <div className="flex min-w-0 flex-col gap-0.5 px-3.5 py-2">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="selectable truncate text-sm tabular-nums">{value}</dd>
     </div>
   )
 }
@@ -20,7 +20,7 @@ function DriverFacts({ host }: { host: HostSnapshot }): React.JSX.Element {
   const installed = host.status !== 'not_installed'
   const activeCount = host.displays.filter((d) => d.active).length
   return (
-    <dl className="divide-y rounded-md border bg-card">
+    <dl className="grid grid-cols-2 divide-x divide-y rounded-md border bg-card sm:grid-cols-4 sm:divide-y-0">
       <Fact label={t('driver:labels.status')} value={<DriverStatusChip status={host.status} />} />
       <Fact label={t('driver:labels.driver_version')} value={installed ? host.driverVersion : '—'} />
       <Fact

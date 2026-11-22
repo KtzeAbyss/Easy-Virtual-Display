@@ -59,6 +59,6 @@ describe('DriverPage', () => {
       ]
     })
     renderWithI18n(<DriverPage host={host} />)
-    expect(screen.getByText('Active displays').nextSibling).toHaveTextContent('1')
+    expect(screen.getByText('Active displays').closest('div')).toHaveTextContent('1')
   })
 })

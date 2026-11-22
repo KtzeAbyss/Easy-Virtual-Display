@@ -22,6 +22,20 @@ It builds on the early concept of [nomi-san/parsec-vdd](https://github.com/nomi-
 - **Command line** — `evdctl` adds and removes displays from scripts, e.g. as Sunshine prep commands.
 - **Polished UX** — light / dark / system themes and an English / 简体中文 interface.
 
+## Screenshots
+
+**Displays** — add and configure virtual monitors
+
+<img src="docs/screenshots/en-displays.png" alt="Displays page" width="720" />
+
+**Driver** — status, custom modes, and maintenance
+
+<img src="docs/screenshots/en-driver.png" alt="Driver page" width="720" />
+
+**Settings** — startup, display behavior, and appearance
+
+<img src="docs/screenshots/en-settings.png" alt="Settings page" width="720" />
+
 ## Command line
 
 The installer puts `evdctl.cmd` next to `EasyVirtualDisplay.exe` (by default in `%LOCALAPPDATA%\EasyVirtualDisplay`). It asks the running app to add or remove a display and exits with the outcome; if the app is not running, it starts it in the tray first.

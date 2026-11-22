@@ -15,12 +15,13 @@
       {
         "label": "main",
         "title": "Easy Virtual Display",
-        "width": 1280,
-        "height": 860,
-        "minWidth": 1100,
-        "minHeight": 720,
+        "width": 1000,
+        "height": 640,
+        "minWidth": 800,
+        "minHeight": 600,
         "visible": false,
         "decorations": false,
+        "transparent": true,
         "skipTaskbar": false
       }
     ],
