@@ -65,7 +65,9 @@ pub fn t_tray(lang: EffectiveLanguage, key: &str) -> &'static str {
     t(lang, "tray", key)
 }
 
-pub fn t_common(lang: EffectiveLanguage, key: &str) -> &'static str {
+/// Shell `common` strings are consumed by the renderer; Rust only needs this helper in tests.
+#[cfg(test)]
+fn t_common(lang: EffectiveLanguage, key: &str) -> &'static str {
     t(lang, "common", key)
 }
 
