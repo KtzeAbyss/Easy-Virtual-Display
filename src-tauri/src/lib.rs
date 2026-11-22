@@ -7,6 +7,7 @@ mod elevator;
 mod errors;
 mod events;
 mod host;
+mod initial_display;
 mod install_prompt;
 mod platform;
 mod quit;
@@ -133,6 +134,12 @@ pub fn run() {
                             .handle_snapshot(&host_clone, &settings)
                             .await;
                         install_prompt::maybe_prompt_to_install_driver(
+                            &handle,
+                            runtime.inner(),
+                            &host_clone,
+                        )
+                        .await;
+                        initial_display::maybe_ensure_initial_display(
                             &handle,
                             runtime.inner(),
                             &host_clone,

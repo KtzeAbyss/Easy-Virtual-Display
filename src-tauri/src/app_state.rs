@@ -28,6 +28,8 @@ pub struct AppRuntime {
     settings: Mutex<AppSettings>,
     effective_language: Mutex<EffectiveLanguage>,
     install_prompt_shown: Mutex<bool>,
+    /// In-process latch so concurrent snapshots only schedule one first-run display add.
+    initial_display_claimed: Mutex<bool>,
     fallback_error: Mutex<Option<EasyVirtualDisplayErrorCode>>,
     published_host: Mutex<PublishedHost>,
 }
@@ -72,6 +74,7 @@ impl AppRuntime {
             settings: Mutex::new(settings),
             effective_language: Mutex::new(effective_language),
             install_prompt_shown: Mutex::new(false),
+            initial_display_claimed: Mutex::new(false),
             fallback_error: Mutex::new(None),
             published_host: Mutex::new(PublishedHost {
                 session_id: 0,
@@ -195,9 +198,9 @@ impl AppRuntime {
     }
 
     /// Atomically claim the install-prompt latch under a single lock. Returns `true` iff
-    /// the caller is the one that flipped it from false→true (and so should show the
-    /// dialog). Concurrent snapshot broadcasts would otherwise race on a read-then-write
-    /// pair and stack two dialogs.
+    /// the caller is the one that flipped it from false→true (and so should start the
+    /// auto-install). Concurrent snapshot broadcasts would otherwise race on a
+    /// read-then-write pair and stack two UAC prompts.
     pub fn try_claim_install_prompt(&self) -> bool {
         let mut shown = self
             .install_prompt_shown
@@ -207,6 +210,20 @@ impl AppRuntime {
             false
         } else {
             *shown = true;
+            true
+        }
+    }
+
+    /// Claim the first-run display latch. Returns `true` only for the first caller.
+    pub fn try_claim_initial_display(&self) -> bool {
+        let mut claimed = self
+            .initial_display_claimed
+            .lock()
+            .expect("initial display latch poisoned");
+        if *claimed {
+            false
+        } else {
+            *claimed = true;
             true
         }
     }
