@@ -16,11 +16,12 @@ It builds on the early concept of [nomi-san/parsec-vdd](https://github.com/nomi-
 - **Add & remove displays anywhere** — from the main window or the system tray, up to 8 virtual displays.
 - **Per-display control** — set resolution, refresh rate, and orientation (landscape / portrait / flipped) for each virtual monitor.
 - **Custom resolution modes** — define up to 5 custom modes the driver should advertise.
-- **GPU targeting** — pin virtual displays to a specific parent GPU (Auto / NVIDIA / AMD).
-- **At-a-glance status** — driver state, driver version, max displays, and active display count.
+- **GPU targeting** — pin virtual displays to a specific render GPU (Auto / NVIDIA / AMD).
+- **At-a-glance status** — driver state, version, display limit, and active count on a dedicated Driver page.
+- **In-window preview** — mirror a virtual display into a local window from the Displays page.
 - **Smart behaviors** — launch on login, close-to-tray, start in tray, *keep screen on* while a display is active, and a *fallback display* that auto-appears when no display is active.
 - **Command line** — `evdctl` adds and removes displays from scripts, e.g. as Sunshine prep commands.
-- **Polished UX** — light / dark / system themes and an English / 简体中文 interface.
+- **Polished UX** — Windows 11–style shell with left navigation, light / dark / system themes, and English / 简体中文.
 
 ## Screenshots
 
