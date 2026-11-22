@@ -123,7 +123,3 @@ npm run tauri:build
 ```
 
 该命令会获取驱动安装包（按固定的 SHA-256 校验）、发布 .NET 宿主，并生成一个 NSIS 安装包，其中打包了渲染层、Rust 外壳与驱动。
-
-## 仓库
-
-- GitHub：https://github.com/KtzeAbyss/Easy-Virtual-Display

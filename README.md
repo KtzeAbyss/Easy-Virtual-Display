@@ -123,7 +123,3 @@ npm run tauri:build
 ```
 
 This fetches the driver installer (checked against a pinned SHA-256), publishes the .NET host, and produces an NSIS installer that bundles the renderer, the Rust shell, and the driver.
-
-## Repository
-
-- GitHub: https://github.com/KtzeAbyss/Easy-Virtual-Display
