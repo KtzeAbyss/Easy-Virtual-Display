@@ -16,9 +16,11 @@ concurrency:
 
 jobs:
   build:
-    name: Build installer
+    name: Build x64 installer
     runs-on: windows-latest
     timeout-minutes: 45
+    env:
+      DOTNET_RID: win-x64
     steps:
       # Third-party actions are pinned to a commit; the comment names the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

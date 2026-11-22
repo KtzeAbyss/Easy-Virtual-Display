@@ -70,17 +70,17 @@ public class HostErrorMapperTests
     }
 
     [Fact]
-    public void ArgumentException_MapsToDriverError()
+    public void ArgumentException_MapsToInvalidRequest()
     {
         var ex = new ArgumentException("bad arg");
-        Assert.Equal("driver_error", GetCode(ParseMessage(ex)));
+        Assert.Equal("invalid_request", GetCode(ParseMessage(ex)));
     }
 
     [Fact]
-    public void JsonException_MapsToDriverError()
+    public void JsonException_MapsToInvalidRequest()
     {
         var ex = new JsonException("bad json");
-        Assert.Equal("driver_error", GetCode(ParseMessage(ex)));
+        Assert.Equal("invalid_request", GetCode(ParseMessage(ex)));
     }
 
     [Fact]

@@ -1,19 +1,16 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 import { useSnapshot } from './hooks/useSnapshot'
 import { useLanguageBridge } from './hooks/useLanguageBridge'
 import { useDocumentTheme } from './hooks/useDocumentTheme'
-import {
-  EASY_VIRTUAL_DISPLAY_ERROR_CODES,
-  type AppTheme,
-  type EasyVirtualDisplayErrorCode
-} from '../shared'
+import { type AppSettings, type AppTheme } from '../shared'
+import { parseBridgeError } from '../shared/errors'
 import { TitleBar } from './components/TitleBar'
 import { DriverStatusBar } from './components/DriverStatusBar'
 import { DisplaysPanel } from './components/DisplaysPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Button } from './components/ui/button'
+import { useBridgeCommand } from './hooks/useBridgeCommand'
 
 function LoadingScreen(): React.JSX.Element {
   const { t } = useTranslation()
@@ -34,8 +31,8 @@ function ConnectionErrorScreen({
   error?: unknown
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const code = (error as Record<string, unknown> | null)?.code
-  const message = EASY_VIRTUAL_DISPLAY_ERROR_CODES.includes(code as EasyVirtualDisplayErrorCode)
+  const code = parseBridgeError(error)
+  const message = code
     ? t(`common:errors.${code}`)
     : error instanceof Error && error.message.length > 0
       ? error.message
@@ -55,8 +52,11 @@ function ConnectionErrorScreen({
 
 function App(): React.JSX.Element {
   const { data: snapshot, error, isLoading, isError, refetch } = useSnapshot()
-  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'displays' | 'settings'>('displays')
+  const { mutate: updateSettings } = useBridgeCommand(
+    (patch: Partial<AppSettings>) => window.easyVirtualDisplay.updateSettings(patch),
+    'common:settings_update_failed'
+  )
 
   useLanguageBridge()
   useDocumentTheme(snapshot?.settings.theme)
@@ -67,14 +67,7 @@ function App(): React.JSX.Element {
   }
 
   const handleThemeChange = (theme: AppTheme): void => {
-    window.easyVirtualDisplay.updateSettings({ theme }).catch((error: unknown) => {
-      const code = (error as Record<string, unknown>)?.code
-      if (EASY_VIRTUAL_DISPLAY_ERROR_CODES.includes(code as EasyVirtualDisplayErrorCode)) {
-        toast.error(t(`common:errors.${code}`))
-      } else {
-        toast.error(t('common:settings_update_failed'))
-      }
-    })
+    updateSettings({ theme })
   }
 
   return (

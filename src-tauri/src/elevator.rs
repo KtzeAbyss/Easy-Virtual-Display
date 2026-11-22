@@ -210,8 +210,13 @@ mod windows_impl {
         Ok((exit_code, stderr_buf))
     }
 
+    /// Escape a path for embedding inside a single-quoted PowerShell string literal.
+    fn ps_single_quoted(path: &PathBuf) -> String {
+        path.to_string_lossy().replace('\'', "''")
+    }
+
     fn build_elevated_script(config_path: &PathBuf) -> String {
-        let p = config_path.to_string_lossy();
+        let p = ps_single_quoted(config_path);
         format!(
             "$ErrorActionPreference = 'Stop'\n\
              $config = Get-Content -LiteralPath '{p}' -Raw | ConvertFrom-Json\n\
@@ -253,7 +258,7 @@ mod windows_impl {
     }
 
     fn build_wrapper_script(elevated_script: &PathBuf) -> String {
-        let p = elevated_script.to_string_lossy();
+        let p = ps_single_quoted(elevated_script);
         format!(
             "$ErrorActionPreference = 'Stop'\n\
              try {{\n\

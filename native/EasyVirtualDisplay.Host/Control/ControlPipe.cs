@@ -9,10 +9,17 @@ namespace EasyVirtualDisplay.Host.Control;
 /// one response line of JSON per connection.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Access is limited to the current user by an explicit ACL rather than
 /// <see cref="PipeOptions.CurrentUserOnly"/>: a pipe created by an elevated process is owned
 /// by the Administrators group, which CurrentUserOnly clients reject, and the app and its
 /// callers (a streaming host's prep commands, say) may each run elevated or not.
+/// </para>
+/// <para>
+/// Threat model: any process running as the same Windows user may connect and call
+/// ensure/release/status. There is no capability token. Cross-user access is denied by the
+/// ACL; same-user abuse is mitigated by connection limits in <c>ControlServer</c>.
+/// </para>
 /// </remarks>
 internal static class ControlPipe
 {
@@ -90,7 +97,8 @@ internal sealed class ControlResponse
 
     public ControlStatus? Status { get; init; }
 
-    public static ControlResponse Failure(string code, string message) => new() { Code = code, Message = message };
+    public static ControlResponse Failure(string code, string message) =>
+        new() { Ok = false, Code = code, Message = message };
 }
 
 internal sealed class ControlStatus

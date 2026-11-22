@@ -12,7 +12,19 @@ export default defineConfig({
     include: [
       'src/renderer/__tests__/**/*.{test,spec}.{ts,tsx}',
       'src/shared/locales/__tests__/**/*.{test,spec}.{ts,tsx}'
-    ]
+    ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: [
+        'src/renderer/hooks/**/*.{ts,tsx}',
+        'src/renderer/bridge/**/*.{ts,tsx}',
+        'src/renderer/lib/**/*.{ts,tsx}',
+        'src/renderer/components/DisplaysPanel.tsx',
+        'src/renderer/components/SettingsPanel.tsx',
+        'src/shared/errors.ts'
+      ]
+    }
   },
   resolve: {
     alias: {

@@ -12,6 +12,8 @@ internal sealed class ControlServer : IAsyncDisposable
 {
     private const int MaxKeyLength = 64;
     private const int MaxWaitSeconds = 300;
+    /// <summary>Caps concurrent same-user clients to limit resource harassment.</summary>
+    private const int MaxConcurrentConnections = 4;
     private static readonly TimeSpan RequestReadTimeout = TimeSpan.FromSeconds(10);
 
     // A host restarted by the app may briefly overlap the previous one's pipe.
@@ -20,6 +22,7 @@ internal sealed class ControlServer : IAsyncDisposable
 
     private readonly IDisplayBackend _backend;
     private readonly KeyedDisplays _keyed;
+    private readonly SemaphoreSlim _connectionSlots = new(MaxConcurrentConnections, MaxConcurrentConnections);
     private readonly CancellationTokenSource _lifetime = new();
     private readonly Task _acceptLoop;
 
@@ -37,6 +40,7 @@ internal sealed class ControlServer : IAsyncDisposable
         _lifetime.Cancel();
         await _acceptLoop;
         _lifetime.Dispose();
+        _connectionSlots.Dispose();
     }
 
     private async Task AcceptLoopAsync(CancellationToken cancellationToken)
@@ -56,7 +60,7 @@ internal sealed class ControlServer : IAsyncDisposable
             }
 
             var connected = pipe;
-            _ = Task.Run(() => ServeAsync(connected, cancellationToken), CancellationToken.None);
+            _ = Task.Run(() => ServeWithSlotAsync(connected, cancellationToken), cancellationToken);
 
             try
             {
@@ -67,6 +71,36 @@ internal sealed class ControlServer : IAsyncDisposable
                 await Console.Error.WriteLineAsync($"Control pipe stopped: {ex.Message}");
                 return;
             }
+        }
+    }
+
+    private async Task ServeWithSlotAsync(NamedPipeServerStream pipe, CancellationToken cancellationToken)
+    {
+        bool acquired;
+        try
+        {
+            acquired = await _connectionSlots.WaitAsync(0, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            await pipe.DisposeAsync().ConfigureAwait(false);
+            return;
+        }
+
+        if (!acquired)
+        {
+            // Refuse excess concurrent same-user clients without processing a request.
+            await pipe.DisposeAsync().ConfigureAwait(false);
+            return;
+        }
+
+        try
+        {
+            await ServeAsync(pipe, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _connectionSlots.Release();
         }
     }
 

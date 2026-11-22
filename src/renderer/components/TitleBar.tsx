@@ -23,6 +23,12 @@ function ThemeSwitcher({
   theme: AppTheme
   onThemeChange: (t: AppTheme) => void
 }): React.JSX.Element {
+  const { t } = useTranslation()
+  const labelKey: Record<AppTheme, string> = {
+    system: 'common:theme_system',
+    light: 'common:theme_light',
+    dark: 'common:theme_dark'
+  }
   return (
     <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-md">
       {THEME_OPTIONS.map(({ value, icon: Icon }) => (
@@ -34,7 +40,7 @@ function ThemeSwitcher({
             theme === value && 'bg-card text-foreground shadow-sm'
           )}
           data-tauri-drag-region="false"
-          aria-label={value}
+          aria-label={t(labelKey[value])}
         >
           <Icon className="w-3 h-3" />
         </button>

@@ -35,8 +35,9 @@ function syncSubscribe<T>(event: string, callback: (payload: T) => void): Unsubs
         unlistenFn = fn
       }
     })
-    .catch(() => {
-      // Tauri internals unavailable — nothing to clean up.
+    .catch((err: unknown) => {
+      // Tauri internals unavailable — subscription will not deliver updates.
+      console.error(`Failed to subscribe to ${event}`, err)
     })
 
   return () => {

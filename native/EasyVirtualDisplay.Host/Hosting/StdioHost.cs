@@ -96,14 +96,30 @@ internal sealed class StdioRpcHost : IAsyncDisposable
 
     private void HandleSnapshotChanged(object? sender, HostSnapshot snapshot)
     {
-        _ = WriteMessageAsync(
-            new
-            {
-                jsonrpc = JsonRpcVersion,
-                method = "host.snapshotChanged",
-                @params = snapshot,
-            },
-            CancellationToken.None);
+        _ = WriteSnapshotNotificationAsync(snapshot);
+    }
+
+    private async Task WriteSnapshotNotificationAsync(HostSnapshot snapshot)
+    {
+        try
+        {
+            await WriteMessageAsync(
+                new
+                {
+                    jsonrpc = JsonRpcVersion,
+                    method = "host.snapshotChanged",
+                    @params = snapshot,
+                },
+                CancellationToken.None);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Host is shutting down; drop the notification.
+        }
+        catch (IOException)
+        {
+            // Stdout closed while the session was stopping.
+        }
     }
 
     private async Task HandleLineAsync(string line, CancellationToken cancellationToken)

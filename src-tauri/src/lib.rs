@@ -172,6 +172,11 @@ pub fn run() {
                 };
                 if let Err(e) = runtime.backend.start().await {
                     eprintln!("native host failed to start: {e}");
+                    // Surface the failure through the same snapshot path the renderer
+                    // already watches (status becomes inaccessible once the host exits /
+                    // never publishes). Retry remains available via getSnapshot.
+                    let snapshot = runtime.republish_snapshot(&start_handle);
+                    tray::refresh(&snapshot);
                 }
             });
 

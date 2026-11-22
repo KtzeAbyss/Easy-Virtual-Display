@@ -2,11 +2,8 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import {
-  EASY_VIRTUAL_DISPLAY_ERROR_CODES,
-  type EasyVirtualDisplayErrorCode,
-  type HostSnapshot
-} from '../../../shared'
+import type { HostSnapshot } from '../../../shared'
+import { toastBridgeError } from '../../lib/bridge-errors'
 import { Button, SectionTitle, Trash2 } from './SettingsPrimitives'
 
 interface DangerZoneSectionProps {
@@ -25,12 +22,7 @@ export function DangerZoneSection({ host }: DangerZoneSectionProps): React.JSX.E
       toast.success(t('settings:uninstall_driver_success'))
     },
     onError: (error: unknown) => {
-      const code = (error as Record<string, unknown> | null)?.code
-      if (EASY_VIRTUAL_DISPLAY_ERROR_CODES.includes(code as EasyVirtualDisplayErrorCode)) {
-        toast.error(t(`common:errors.${code}`))
-      } else {
-        toast.error(t('common:operation_failed'))
-      }
+      toastBridgeError(t, error)
     }
   })
 

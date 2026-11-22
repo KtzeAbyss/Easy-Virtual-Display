@@ -1,16 +1,16 @@
-//! The 11 `#[tauri::command]` handlers wiring Seam A to the Rust backend + shell.
+//! Tauri command handlers wiring Seam A to the Rust backend + shell.
 //!
 //! Mapping (Seam A TS method → Tauri command id):
 //!   getSnapshot         → get_snapshot
 //!   subscribeSnapshot   → (event `snapshot-changed`)
 //!   onLanguageChanged   → (event `language-changed`)
-//!   installDriver       → install_driver         [Phase 5: wire elevation]
-//!   uninstallDriver     → uninstall_driver       [Phase 5: wire elevation]
+//!   installDriver       → install_driver
+//!   uninstallDriver     → uninstall_driver
 //!   addDisplay          → add_display
 //!   removeDisplay       → remove_display
 //!   removeAllDisplays   → remove_all_displays
 //!   setDisplayMode      → set_display_mode
-//!   applyAdminConfig    → apply_admin_config     [Phase 5: wire elevation]
+//!   applyAdminConfig    → apply_admin_config
 //!   updateSettings      → update_settings
 //!   openDisplaySettings → open_display_settings
 //!   showMainWindow      → show_main_window

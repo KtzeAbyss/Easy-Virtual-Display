@@ -1,12 +1,5 @@
-import { useMutation, type UseMutationResult } from '@tanstack/react-query'
-import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
-import {
-  EASY_VIRTUAL_DISPLAY_ERROR_CODES,
-  type EasyVirtualDisplayErrorCode,
-  type AppSettings,
-  type AppSnapshot
-} from '../../shared'
+import type { AppSettings, AppSnapshot } from '../../shared'
+import { useBridgeCommand } from '../hooks/useBridgeCommand'
 import { useAdminConfigForm } from './settings-panel/useAdminConfigForm'
 import { BehaviorSettingsSection } from './settings-panel/BehaviorSettingsSection'
 import { DisplaySettingsSection } from './settings-panel/DisplaySettingsSection'
@@ -18,29 +11,12 @@ interface SettingsPanelProps {
   snapshot: AppSnapshot
 }
 
-/* ── useUpdateSettings hook ──────────────────────────────────── */
-
-function useUpdateSettings(): UseMutationResult<void, unknown, Partial<AppSettings>> {
-  const { t } = useTranslation()
-
-  return useMutation({
-    mutationFn: (patch: Partial<AppSettings>) => window.easyVirtualDisplay.updateSettings(patch),
-    onError: (error: unknown) => {
-      const code = (error as Record<string, unknown>)?.code
-      if (EASY_VIRTUAL_DISPLAY_ERROR_CODES.includes(code as EasyVirtualDisplayErrorCode)) {
-        toast.error(t(`common:errors.${code}`))
-      } else {
-        toast.error(t('common:settings_update_failed'))
-      }
-    }
-  })
-}
-
-/* ── Main component ──────────────────────────────────────────── */
-
 export function SettingsPanel({ snapshot }: SettingsPanelProps): React.JSX.Element {
   const { settings, host } = snapshot
-  const { mutate: updateSetting, isPending: isSettingPending } = useUpdateSettings()
+  const { mutate: updateSetting, isPending: isSettingPending } = useBridgeCommand(
+    (patch: Partial<AppSettings>) => window.easyVirtualDisplay.updateSettings(patch),
+    'common:settings_update_failed'
+  )
   const adminForm = useAdminConfigForm(host)
 
   return (

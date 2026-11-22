@@ -58,6 +58,10 @@ async fn run_quit_flow(app: AppHandle<Wry>) {
         }
     }
 
+    // Cancel fallback-display debounce before tear-down so it cannot add a display
+    // while we are quitting.
+    runtime.boundaries.dispose().await;
+
     // Stop capture sessions before their source displays are removed.
     runtime.viewers.close_all();
     if active_count > 0 {

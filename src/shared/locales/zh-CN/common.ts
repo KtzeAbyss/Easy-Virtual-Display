@@ -36,6 +36,8 @@ export default {
     viewer_unsupported: '仅 Windows 支持将显示器画面镜像到窗口',
     viewer_start_failed: '无法打开显示器画面窗口',
     launch_on_login_failed: '无法更改开机自启',
-    settings_save_failed: '无法保存设置'
+    settings_save_failed: '无法保存设置',
+    invalid_request: '请求无效',
+    needs_elevation: '需要管理员权限'
   }
 }
