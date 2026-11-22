@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { Minus, Square, Copy, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+/** Segoe Fluent Icons caption glyphs (same code points in Segoe MDL2 Assets on Windows 10). */
+const GLYPH = {
+  minimize: '\uE921',
+  maximize: '\uE922',
+  restore: '\uE923',
+  close: '\uE8BB'
+} as const
+
 /**
- * Custom minimize / maximize / close buttons rendered when the Tauri shell strips native
- * decorations. Sits on the right side of the title bar, following the Windows
- * window-control convention. Updates the maximize icon when the window enters/leaves
- * maximized state.
+ * Caption buttons for the undecorated main window, sized and colored to the Windows 11
+ * spec (46×32, red close hover). The maximize glyph tracks the window's maximized state.
  */
 export function TauriWindowControls(): React.JSX.Element {
+  const { t } = useTranslation()
   const [isMaximized, setIsMaximized] = useState(false)
 
   useEffect(() => {
@@ -57,39 +64,46 @@ export function TauriWindowControls(): React.JSX.Element {
   // the mousedown to start a drag — which kills our buttons' click handlers. Opting the
   // entire controls cluster out short-circuits that walk before it reaches the title-bar row.
   return (
-    <div className="flex items-center gap-0" data-tauri-drag-region="false">
-      <ControlButton aria-label="minimize" onClick={onMinimize}>
-        <Minus className="h-3.5 w-3.5" />
-      </ControlButton>
-      <ControlButton aria-label="maximize" onClick={onToggleMaximize}>
-        {isMaximized ? <Copy className="h-3 w-3" /> : <Square className="h-3 w-3" />}
-      </ControlButton>
-      <ControlButton aria-label="close" onClick={onClose} variant="close">
-        <X className="h-4 w-4" />
-      </ControlButton>
+    <div className="flex h-full items-stretch" data-tauri-drag-region="false">
+      <ControlButton label={t('common:window.minimize')} glyph={GLYPH.minimize} onClick={onMinimize} />
+      <ControlButton
+        label={t(isMaximized ? 'common:window.restore' : 'common:window.maximize')}
+        glyph={isMaximized ? GLYPH.restore : GLYPH.maximize}
+        onClick={onToggleMaximize}
+      />
+      <ControlButton label={t('common:window.close')} glyph={GLYPH.close} onClick={onClose} close />
     </div>
   )
 }
 
 function ControlButton({
-  children,
-  variant,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'close'
+  label,
+  glyph,
+  onClick,
+  close
+}: {
+  label: string
+  glyph: string
+  onClick: () => void
+  close?: boolean
 }): React.JSX.Element {
   return (
     <button
-      {...props}
       type="button"
+      tabIndex={-1}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
       className={cn(
-        'flex h-9 w-11 items-center justify-center text-foreground transition-colors',
-        variant === 'close'
-          ? 'hover:bg-destructive hover:text-destructive-foreground'
-          : 'hover:bg-muted'
+        'flex h-8 w-[46px] items-center justify-center text-foreground transition-colors duration-100',
+        close
+          ? 'hover:bg-caption-close hover:text-white active:bg-caption-close/90 active:text-white/80'
+          : 'hover:bg-nav-hover active:bg-nav-selected active:text-muted-foreground'
       )}
     >
-      {children}
+      <span aria-hidden className="font-icons text-[10px] leading-none">
+        {glyph}
+      </span>
     </button>
   )
 }

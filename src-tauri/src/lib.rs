@@ -8,6 +8,7 @@ mod errors;
 mod events;
 mod host;
 mod install_prompt;
+mod platform;
 mod quit;
 mod settings_store;
 mod shell_locales;
@@ -65,6 +66,8 @@ pub fn run() {
             commands::show_main_window,
             commands::open_display_viewer,
             commands::close_display_viewer,
+            commands::apply_window_material,
+            commands::open_project_link,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

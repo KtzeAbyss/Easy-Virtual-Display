@@ -25,10 +25,13 @@ describe('DisplayCard', () => {
     vi.clearAllMocks()
   })
 
-  it('renders display name and current mode', () => {
+  it('renders the display name, state and current mode once', () => {
     renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
     expect(screen.getByText('Virtual Display 1')).toBeInTheDocument()
-    expect(screen.getByText(/1920.*1080.*60/)).toBeInTheDocument()
+    expect(screen.getByText('Active')).toBeInTheDocument()
+    expect(screen.getByText(/1920 × 1080 · 60 Hz · Landscape/)).toBeInTheDocument()
+    // The raw device path lives in a tooltip, not in the card body.
+    expect(screen.queryByText('\\\\.\\DISPLAY1')).not.toBeInTheDocument()
   })
 
   it('shows unsupported mode badge when unsupportedCurrentMode is true', () => {
@@ -39,37 +42,48 @@ describe('DisplayCard', () => {
         viewerOpen={false}
       />
     )
-    expect(screen.getByText('unsupported mode')).toBeInTheDocument()
+    expect(screen.getByText('Unsupported mode')).toBeInTheDocument()
   })
 
   it('does not show unsupported mode badge normally', () => {
     renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
-    expect(screen.queryByText('unsupported mode')).not.toBeInTheDocument()
+    expect(screen.queryByText('Unsupported mode')).not.toBeInTheDocument()
   })
 
-  it('calls removeDisplay with correct index when Remove clicked', async () => {
+  it('removes the display from the overflow menu', async () => {
     const user = userEvent.setup()
     vi.mocked(window.easyVirtualDisplay.removeDisplay).mockResolvedValue(undefined)
 
     renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
-    await user.click(screen.getByRole('button', { name: /remove/i }))
+    await user.click(screen.getByRole('button', { name: /more actions/i }))
+    await user.click(await screen.findByRole('menuitem', { name: /^remove$/i }))
 
     await waitFor(() => {
       expect(window.easyVirtualDisplay.removeDisplay).toHaveBeenCalledWith(0)
     })
   })
 
-  it('renders three select triggers for resolution, refresh rate, and orientation', () => {
+  it('opens system display settings from the overflow menu', async () => {
+    const user = userEvent.setup()
     renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
-    const triggers = screen.getAllByRole('combobox')
-    expect(triggers).toHaveLength(3)
+    await user.click(screen.getByRole('button', { name: /more actions/i }))
+    await user.click(await screen.findByRole('menuitem', { name: /system display settings/i }))
+    expect(window.easyVirtualDisplay.openDisplaySettings).toHaveBeenCalledTimes(1)
   })
 
-  it('opens the mirror window for this display when View is clicked', async () => {
+  it('renders labelled selects for resolution, refresh rate, and orientation', () => {
+    renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
+    expect(screen.getAllByRole('combobox')).toHaveLength(3)
+    expect(screen.getByLabelText('Resolution')).toBeInTheDocument()
+    expect(screen.getByLabelText('Refresh rate')).toBeInTheDocument()
+    expect(screen.getByLabelText('Orientation')).toBeInTheDocument()
+  })
+
+  it('opens the mirror window for this display when Preview is clicked', async () => {
     const user = userEvent.setup()
 
     renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={false} />)
-    await user.click(screen.getByRole('button', { name: /^view$/i }))
+    await user.click(screen.getByRole('button', { name: /^preview$/i }))
 
     await waitFor(() => {
       expect(window.easyVirtualDisplay.openDisplayViewer).toHaveBeenCalledWith(0)
@@ -80,7 +94,7 @@ describe('DisplayCard', () => {
     const user = userEvent.setup()
 
     renderWithI18n(<DisplayCard display={mockDisplay} driverOk={true} viewerOpen={true} />)
-    await user.click(screen.getByRole('button', { name: /close view/i }))
+    await user.click(screen.getByRole('button', { name: /stop preview/i }))
 
     await waitFor(() => {
       expect(window.easyVirtualDisplay.closeDisplayViewer).toHaveBeenCalledWith(0)
@@ -91,7 +105,7 @@ describe('DisplayCard', () => {
     const user = userEvent.setup()
 
     renderWithI18n(<DisplayCard display={mockDisplay} driverOk={false} viewerOpen={true} />)
-    const close = screen.getByRole('button', { name: /close view/i })
+    const close = screen.getByRole('button', { name: /stop preview/i })
     expect(close).toBeEnabled()
     await user.click(close)
 
@@ -104,7 +118,8 @@ describe('DisplayCard', () => {
     renderWithI18n(
       <DisplayCard display={{ ...mockDisplay, active: false }} driverOk={true} viewerOpen={false} />
     )
-    expect(screen.getByRole('button', { name: /^view$/i })).toBeDisabled()
+    expect(screen.getByText('Inactive')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^preview$/i })).toBeDisabled()
   })
 
   it('disables controls when driver is not ok', () => {

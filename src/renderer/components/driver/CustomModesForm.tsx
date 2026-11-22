@@ -1,213 +1,214 @@
 import { Controller } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { ChevronDown, Plus, Shield, X } from 'lucide-react'
+import type { DisplayMode } from '../../../shared'
 import type { AdminConfigFormData } from '../../lib/schemas'
 import type { useAdminConfigForm } from './useAdminConfigForm'
+import { Button } from '../ui/button'
 import { Input } from '../ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import {
-  SectionTitle,
-  SettingRow,
-  Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Shield,
-  Plus,
-  Trash2,
-  Save
-} from './SettingsPrimitives'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '../ui/dropdown-menu'
+import { SettingRow } from '../layout/Page'
 
-interface AdvancedSettingsSectionProps {
-  adminForm: ReturnType<typeof useAdminConfigForm>
-}
+type AdminForm = ReturnType<typeof useAdminConfigForm>
+
+const MAX_CUSTOM_MODES = 5
+
+const PRESET_MODES: DisplayMode[] = [
+  { width: 1920, height: 1080, hz: 120 },
+  { width: 2560, height: 1440, hz: 60 },
+  { width: 2560, height: 1600, hz: 120 },
+  { width: 3440, height: 1440, hz: 60 },
+  { width: 3840, height: 2160, hz: 60 }
+]
 
 function ModeRow({
   index,
-  field,
   register,
-  errors,
+  invalid,
   onRemove
 }: {
   index: number
-  field: { id: string }
-  register: ReturnType<typeof useAdminConfigForm>['form']['register']
-  errors: ReturnType<typeof useAdminConfigForm>['form']['formState']['errors']
+  register: AdminForm['form']['register']
+  invalid: boolean
   onRemove: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <div
-      key={field.id}
-      className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-muted rounded-md"
-    >
+    <li className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <Input
           type="number"
-          placeholder={t('displays:placeholder_width')}
-          className="h-7 w-20 text-xs font-mono bg-input border-border"
+          placeholder={t('driver:placeholder_width')}
+          aria-label={t('driver:placeholder_width')}
+          aria-invalid={invalid || undefined}
+          className="w-24 tabular-nums"
           {...register(`customModes.${index}.width`, { valueAsNumber: true })}
         />
-        <span className="text-muted-foreground text-xs">×</span>
+        <span className="text-muted-foreground">×</span>
         <Input
           type="number"
-          placeholder={t('displays:placeholder_height')}
-          className="h-7 w-20 text-xs font-mono bg-input border-border"
+          placeholder={t('driver:placeholder_height')}
+          aria-label={t('driver:placeholder_height')}
+          aria-invalid={invalid || undefined}
+          className="w-24 tabular-nums"
           {...register(`customModes.${index}.height`, { valueAsNumber: true })}
         />
-        <span className="text-muted-foreground text-xs">@</span>
+        <span className="text-muted-foreground">@</span>
         <Input
           type="number"
-          placeholder={t('displays:placeholder_hz')}
-          className="h-7 w-16 text-xs font-mono bg-input border-border"
+          placeholder="60"
+          aria-label={t('driver:placeholder_hz')}
+          aria-invalid={invalid || undefined}
+          className="w-20 tabular-nums"
           {...register(`customModes.${index}.hz`, { valueAsNumber: true })}
         />
-      </div>
-      <button
-        type="button"
-        onClick={onRemove}
-        className="text-muted-foreground hover:text-destructive-foreground transition-colors"
-        aria-label={t('common:remove')}
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
-      {errors.customModes?.[index] && (
-        <span className="block text-xs text-destructive">{t('displays:invalid_values')}</span>
-      )}
-    </div>
-  )
-}
-
-function CustomModesEditor({
-  fields,
-  register,
-  errors,
-  onAppend,
-  onRemove
-}: {
-  fields: { id: string }[]
-  register: ReturnType<typeof useAdminConfigForm>['form']['register']
-  errors: ReturnType<typeof useAdminConfigForm>['form']['formState']['errors']
-  onAppend: () => void
-  onRemove: (i: number) => void
-}): React.JSX.Element {
-  const { t } = useTranslation()
-  return (
-    <div className="px-4 py-3">
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <p className="text-sm text-foreground">{t('displays:custom_resolutions')}</p>
-          <p className="text-xs text-muted-foreground">{t('displays:custom_modes_hint')}</p>
-        </div>
-        <span className="text-xs font-mono text-muted-foreground">
-          {t('settings:custom_modes_count', { count: fields.length })}
-        </span>
-      </div>
-      <div className="flex flex-col gap-1.5 mb-2">
-        {fields.map((field, i) => (
-          <ModeRow
-            key={field.id}
-            index={i}
-            field={field}
-            register={register}
-            errors={errors}
-            onRemove={() => onRemove(i)}
-          />
-        ))}
-      </div>
-      {fields.length < 5 && (
-        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onAppend}>
-          <Plus className="w-3.5 h-3.5" />
-          {t('displays:add_mode')}
+        <span className="text-muted-foreground">Hz</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="ml-auto text-muted-foreground"
+          onClick={onRemove}
+          aria-label={t('displays:remove')}
+        >
+          <X />
         </Button>
-      )}
-      {errors.customModes?.message && (
-        <p className="block text-xs text-destructive mt-1">{errors.customModes.message}</p>
-      )}
-    </div>
+      </div>
+      {invalid && <span className="text-xs text-status-error">{t('driver:invalid_values')}</span>}
+    </li>
   )
 }
 
-function ParentGpuField({
+function AddModeMenu({ onAdd }: { onAdd: (mode: DisplayMode) => void }): React.JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="outline">
+          <Plus />
+          {t('driver:add_mode')}
+          <ChevronDown className="size-3.5 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {PRESET_MODES.map((mode) => (
+          <DropdownMenuItem
+            key={`${mode.width}x${mode.height}@${mode.hz}`}
+            className="tabular-nums"
+            onSelect={() => onAdd(mode)}
+          >
+            {mode.width} × {mode.height} @ {mode.hz} Hz
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => onAdd({ width: 1920, height: 1080, hz: 60 })}>
+          {t('driver:add_custom_mode')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function ParentGpuSelect({
   control,
-  isSubmitting
+  disabled
 }: {
-  control: ReturnType<typeof useAdminConfigForm>['form']['control']
-  isSubmitting: boolean
+  control: AdminForm['form']['control']
+  disabled: boolean
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <div className="px-4">
-      <SettingRow
-        label={t('settings:gpu_selection')}
-        description={t('settings:gpu_selection_desc')}
-      >
-        <Controller<AdminConfigFormData, 'parentGpu'>
-          control={control}
-          name="parentGpu"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange} disabled={isSubmitting}>
-              <SelectTrigger className="w-32 h-8 text-xs bg-input border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto" className="text-xs">
-                  {t('driver:gpu_options.auto')}
-                </SelectItem>
-                <SelectItem value="nvidia" className="text-xs">
-                  {t('driver:gpu_options.nvidia')}
-                </SelectItem>
-                <SelectItem value="amd" className="text-xs">
-                  {t('driver:gpu_options.amd')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </SettingRow>
-    </div>
+    <Controller<AdminConfigFormData, 'parentGpu'>
+      control={control}
+      name="parentGpu"
+      render={({ field }) => (
+        <Select value={field.value} onValueChange={field.onChange} disabled={disabled}>
+          <SelectTrigger className="w-36" aria-label={t('driver:labels.parent_gpu')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="auto">{t('driver:gpu_options.auto')}</SelectItem>
+            <SelectItem value="nvidia">{t('driver:gpu_options.nvidia')}</SelectItem>
+            <SelectItem value="amd">{t('driver:gpu_options.amd')}</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+    />
   )
 }
 
-function AdminConfigNotice({ isSubmitting }: { isSubmitting: boolean }): React.JSX.Element {
-  const { t } = useTranslation()
-  return (
-    <div className="px-4 py-3">
-      <div className="flex items-start gap-3 p-3 bg-status-warn/5 border border-status-warn/20 rounded-md mb-3">
-        <Shield className="w-4 h-4 text-status-warn mt-0.5 shrink-0" />
-        <p className="text-xs text-muted-foreground leading-relaxed">{t('settings:uac_warning')}</p>
-      </div>
-      <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
-        <Save className="w-3.5 h-3.5" />
-        {isSubmitting ? t('common:saving') : t('settings:save_config')}
-      </Button>
-    </div>
-  )
-}
-
-export function AdvancedSettingsSection({
-  adminForm
-}: AdvancedSettingsSectionProps): React.JSX.Element {
+/** Driver-level configuration; every change is applied in one elevated step. */
+export function CustomModesForm({ adminForm }: { adminForm: AdminForm }): React.JSX.Element {
   const { t } = useTranslation()
   const { form, fieldArray, onSubmit } = adminForm
-  const { errors, isSubmitting } = form.formState
+  const { errors, isSubmitting, isDirty } = form.formState
+  const { fields } = fieldArray
 
   return (
-    <section>
-      <SectionTitle>{t('settings:advanced_title')}</SectionTitle>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="bg-card border border-border rounded-lg divide-y divide-border">
-          <CustomModesEditor
-            fields={fieldArray.fields}
-            register={form.register}
-            errors={errors}
-            onAppend={() => fieldArray.append({ width: 1920, height: 1080, hz: 60 })}
-            onRemove={(i) => fieldArray.remove(i)}
-          />
-          <ParentGpuField control={form.control} isSubmitting={isSubmitting} />
-          <AdminConfigNotice isSubmitting={isSubmitting} />
-        </div>
-      </form>
-    </section>
+    <form className="flex flex-col gap-1" onSubmit={form.handleSubmit(onSubmit)}>
+      <SettingRow
+        label={t('driver:custom_resolutions')}
+        description={t('driver:custom_modes_hint')}
+        footer={
+          <div className="border-t px-4 py-3">
+            {fields.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t('driver:no_custom_modes')}</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {fields.map((field, i) => (
+                  <ModeRow
+                    key={field.id}
+                    index={i}
+                    register={form.register}
+                    invalid={Boolean(errors.customModes?.[i])}
+                    onRemove={() => fieldArray.remove(i)}
+                  />
+                ))}
+              </ul>
+            )}
+            {errors.customModes?.message && (
+              <p className="mt-2 text-xs text-status-error">{errors.customModes.message}</p>
+            )}
+          </div>
+        }
+      >
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {fields.length} / {MAX_CUSTOM_MODES}
+        </span>
+        {fields.length < MAX_CUSTOM_MODES && (
+          <AddModeMenu onAdd={(mode) => fieldArray.append(mode)} />
+        )}
+      </SettingRow>
+      <SettingRow
+        label={t('driver:labels.parent_gpu')}
+        description={t('driver:gpu_selection_desc')}
+      >
+        <ParentGpuSelect control={form.control} disabled={isSubmitting} />
+      </SettingRow>
+      <div className="flex items-center justify-end gap-2 pt-2">
+        <span className="mr-auto text-xs text-muted-foreground">{t('driver:uac_note')}</span>
+        {isDirty && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => form.reset()}
+          >
+            {t('driver:discard')}
+          </Button>
+        )}
+        <Button type="submit" disabled={!isDirty || isSubmitting} className="min-w-24">
+          <Shield />
+          {isSubmitting ? t('driver:applying') : t('driver:apply')}
+        </Button>
+      </div>
+    </form>
   )
 }

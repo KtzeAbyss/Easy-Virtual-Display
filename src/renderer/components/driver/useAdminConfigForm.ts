@@ -47,7 +47,7 @@ export function useAdminConfigForm(host: HostSnapshot): AdminConfigFormResult {
     try {
       await window.easyVirtualDisplay.applyAdminConfig(data)
       form.reset(data)
-      toast.success(t('displays:config_saved'))
+      toast.success(t('driver:config_saved'))
     } catch (e: unknown) {
       const code = parseBridgeError(e)
       if (code === 'admin_cancelled') {

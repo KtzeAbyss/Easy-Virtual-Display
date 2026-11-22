@@ -3,87 +3,84 @@ import userEvent from '@testing-library/user-event'
 import { waitFor } from '@testing-library/react'
 import type { AppSnapshot } from '../../shared'
 import { renderWithI18n } from './test-utils'
-import { SettingsPanel } from '../components/SettingsPanel'
+import { DriverPage } from '../components/DriverPage'
 
-const makeSnapshot = (hostOverrides: Partial<AppSnapshot['host']> = {}): AppSnapshot => ({
-  host: {
-    revision: 1,
-    status: 'ok',
-    driverVersion: '4.22.0.0',
-    maxDisplays: 4,
-    displays: [],
-    activeOutputs: 0,
-    customModes: [],
-    parentGpu: 'auto',
-    ...hostOverrides
-  },
-  settings: {
-    launchOnLogin: false,
-    closeToTray: true,
-    startMinimized: false,
-    fallbackDisplay: false,
-    keepScreenOn: false,
-    theme: 'system',
-    language: 'system'
-  },
-  effectiveLanguage: 'en',
-  openViewers: [],
-  fallbackError: null,
-  seq: 1
+const makeHost = (overrides: Partial<AppSnapshot['host']> = {}): AppSnapshot['host'] => ({
+  revision: 1,
+  status: 'ok',
+  driverVersion: '4.22.0.0',
+  maxDisplays: 4,
+  displays: [],
+  activeOutputs: 0,
+  customModes: [],
+  parentGpu: 'auto',
+  ...overrides
 })
 
-describe('SettingsPanel (Advanced section)', () => {
+async function addMode(user: ReturnType<typeof userEvent.setup>, item: RegExp): Promise<void> {
+  await user.click(screen.getByRole('button', { name: /add mode/i }))
+  await user.click(await screen.findByRole('menuitem', { name: item }))
+}
+
+describe('CustomModesForm (driver page)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders save button', () => {
-    renderWithI18n(<SettingsPanel snapshot={makeSnapshot()} />)
-    expect(screen.getByRole('button', { name: /save configuration/i })).toBeInTheDocument()
+  it('keeps Apply disabled until something changes', () => {
+    renderWithI18n(<DriverPage host={makeHost()} />)
+    expect(screen.getByRole('button', { name: /apply/i })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: /discard/i })).not.toBeInTheDocument()
   })
 
-  it('renders add mode button when fewer than 5 modes', () => {
-    renderWithI18n(<SettingsPanel snapshot={makeSnapshot()} />)
-    expect(screen.getByRole('button', { name: /add mode/i })).toBeInTheDocument()
-  })
-
-  it('hides add mode button when 5 modes exist', () => {
-    const snapshot = makeSnapshot({
+  it('hides the add mode menu when 5 modes exist', () => {
+    const host = makeHost({
       customModes: Array.from({ length: 5 }, () => ({ width: 1920, height: 1080, hz: 60 }))
     })
-    renderWithI18n(<SettingsPanel snapshot={snapshot} />)
+    renderWithI18n(<DriverPage host={host} />)
     expect(screen.queryByRole('button', { name: /add mode/i })).not.toBeInTheDocument()
   })
 
-  it('calls applyAdminConfig with empty modes on submit', async () => {
+  it('applies a preset mode', async () => {
     const user = userEvent.setup()
     vi.mocked(window.easyVirtualDisplay.applyAdminConfig).mockResolvedValue(undefined)
 
-    renderWithI18n(<SettingsPanel snapshot={makeSnapshot()} />)
-    await user.click(screen.getByRole('button', { name: /save configuration/i }))
+    renderWithI18n(<DriverPage host={makeHost()} />)
+    await addMode(user, /2560 × 1440 @ 60/)
+    await user.click(screen.getByRole('button', { name: /apply/i }))
 
     await waitFor(() => {
       expect(window.easyVirtualDisplay.applyAdminConfig).toHaveBeenCalledWith({
-        customModes: [],
+        customModes: [{ width: 2560, height: 1440, hz: 60 }],
         parentGpu: 'auto'
       })
     })
   })
 
-  it('shows error when mode has invalid (zero) width', async () => {
+  it('discard restores the applied configuration', async () => {
+    const user = userEvent.setup()
+    renderWithI18n(<DriverPage host={makeHost()} />)
+    await addMode(user, /custom/i)
+    expect(screen.getByPlaceholderText('Width')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /discard/i }))
+    expect(screen.queryByPlaceholderText('Width')).not.toBeInTheDocument()
+  })
+
+  it('shows an inline error when a mode has an invalid (zero) width', async () => {
     const user = userEvent.setup()
 
-    renderWithI18n(<SettingsPanel snapshot={makeSnapshot()} />)
-    await user.click(screen.getByRole('button', { name: /add mode/i }))
+    renderWithI18n(<DriverPage host={makeHost()} />)
+    await addMode(user, /custom/i)
 
     const widthInput = screen.getByPlaceholderText('Width')
     await user.clear(widthInput)
     await user.type(widthInput, '0')
 
-    await user.click(screen.getByRole('button', { name: /save configuration/i }))
+    await user.click(screen.getByRole('button', { name: /apply/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid values/i)).toBeInTheDocument()
+      expect(screen.getByText(/positive whole numbers/i)).toBeInTheDocument()
     })
     expect(window.easyVirtualDisplay.applyAdminConfig).not.toHaveBeenCalled()
   })

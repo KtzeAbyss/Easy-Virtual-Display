@@ -16,8 +16,11 @@
 //!   showMainWindow      → show_main_window
 //!   openDisplayViewer   → open_display_viewer
 //!   closeDisplayViewer  → close_display_viewer
+//!   applyWindowMaterial → apply_window_material
+//!   openProjectLink     → open_project_link
 
-use tauri::{AppHandle, Manager, State};
+use tauri::window::{Effect, EffectsBuilder};
+use tauri::{AppHandle, Manager, State, Theme, WebviewWindow};
 use tauri_plugin_opener::OpenerExt;
 
 use crate::app_state::AppRuntime;
@@ -274,6 +277,52 @@ pub fn show_main_window(app: AppHandle) -> Result<(), EasyVirtualDisplayError> {
     Ok(())
 }
 
+/// Match the native frame to the renderer theme and apply Mica where the OS supports it.
+/// Returns whether Mica is active, so the renderer only goes transparent when something
+/// is actually painted behind it.
+#[tauri::command]
+pub fn apply_window_material(window: WebviewWindow, dark: bool) -> bool {
+    let _ = window.set_theme(Some(if dark { Theme::Dark } else { Theme::Light }));
+    if !crate::platform::supports_mica() {
+        return false;
+    }
+    window
+        .set_effects(EffectsBuilder::new().effect(Effect::Mica).build())
+        .is_ok()
+}
+
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProjectLink {
+    Repository,
+    Issues,
+    Releases,
+}
+
+impl ProjectLink {
+    fn url(self) -> &'static str {
+        match self {
+            ProjectLink::Repository => "https://github.com/KtzeAbyss/Easy-Virtual-Display",
+            ProjectLink::Issues => "https://github.com/KtzeAbyss/Easy-Virtual-Display/issues",
+            ProjectLink::Releases => "https://github.com/KtzeAbyss/Easy-Virtual-Display/releases",
+        }
+    }
+}
+
+/// Only a fixed set of URLs can be opened, so the renderer never hands arbitrary
+/// targets to the OS shell.
+#[tauri::command]
+pub fn open_project_link(app: AppHandle, link: ProjectLink) -> Result<(), EasyVirtualDisplayError> {
+    app.opener()
+        .open_url(link.url(), None::<&str>)
+        .map_err(|e| {
+            EasyVirtualDisplayError::new(
+                EasyVirtualDisplayErrorCode::InvalidRequest,
+                format!("Failed to open project link: {e}"),
+            )
+        })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -301,6 +350,13 @@ mod tests {
         let cur = default_app_settings();
         let merged = merge_settings(cur.clone(), AppSettingsPatch::default());
         assert_eq!(merged, cur);
+    }
+
+    #[test]
+    fn project_links_only_resolve_known_targets() {
+        let link: ProjectLink = serde_json::from_str("\"issues\"").unwrap();
+        assert!(link.url().ends_with("/issues"));
+        assert!(serde_json::from_str::<ProjectLink>("\"https://example.com\"").is_err());
     }
 
     #[test]

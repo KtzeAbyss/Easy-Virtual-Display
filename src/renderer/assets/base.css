@@ -1,81 +1,99 @@
 @custom-variant dark (&:is(.dark *));
 
+/* Fluent 2 (Windows 11) color ramp. Translucent fills are deliberate: they read correctly
+   both over Mica and over the opaque fallback background on Windows 10. */
 :root {
-  --background: oklch(0.965 0 0);
-  --foreground: oklch(0.13 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0 0);
-  --primary: oklch(0.52 0.19 255);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.94 0 0);
-  --secondary-foreground: oklch(0.25 0 0);
-  --muted: oklch(0.93 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.94 0 0);
-  --accent-foreground: oklch(0.25 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.88 0 0);
-  --input: oklch(0.95 0 0);
-  --ring: oklch(0.52 0.19 255);
-  --radius: 0.5rem;
+  --background: #f3f3f3;
+  --foreground: #1b1b1b;
+  --layer: #ffffff80;
+  --card: #ffffffb3;
+  --card-foreground: #1b1b1b;
+  --popover: #f9f9f9;
+  --popover-foreground: #1b1b1b;
+  --primary: #005fb8;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffffb3;
+  --secondary-foreground: #1b1b1b;
+  --muted: #0000000a;
+  --muted-foreground: #0000009e;
+  --accent: #0000000a;
+  --accent-foreground: #1b1b1b;
+  --destructive: #c42b1c;
+  --destructive-foreground: #ffffff;
+  --border: #0000000f;
+  --input: #ffffffb3;
+  --ring: #005fb8;
+  --control: #ffffffb3;
+  --control-hover: #f9f9f980;
+  --control-border: #00000017;
+  --nav-hover: #0000000a;
+  --nav-selected: #0000000f;
+  --overlay: #0000004d;
 
-  /* Status colors */
-  --status-ok: oklch(0.56 0.17 145);
-  --status-warn: oklch(0.72 0.18 55);
-  --status-error: oklch(0.577 0.245 27.325);
+  --status-ok: #0f7b0f;
+  --status-warn: #9d5d00;
+  --status-error: #c42b1c;
+  --status-info: #005fb8;
+  --infobar-info: #f6f6f6;
+  --infobar-ok: #dff6dd;
+  --infobar-warn: #fff4ce;
+  --infobar-error: #fde7e9;
 
-  /* Sidebar/panel */
-  --sidebar: oklch(0.96 0 0);
-  --sidebar-foreground: oklch(0.13 0 0);
-  --sidebar-border: oklch(0.88 0 0);
-
-  /* Metric card */
-  --metric-bg: oklch(0.97 0 0);
+  --caption-close: #c42b1c;
 }
 
 .dark {
-  --background: oklch(0.135 0 0);
-  --foreground: oklch(0.93 0 0);
-  --card: oklch(0.18 0 0);
-  --card-foreground: oklch(0.93 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.93 0 0);
-  --primary: oklch(0.6 0.2 255);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.24 0 0);
-  --secondary-foreground: oklch(0.85 0 0);
-  --muted: oklch(0.24 0 0);
-  --muted-foreground: oklch(0.55 0 0);
-  --accent: oklch(0.24 0 0);
-  --accent-foreground: oklch(0.85 0 0);
-  --destructive: oklch(0.45 0.2 27);
-  --destructive-foreground: oklch(0.85 0.16 27);
-  --border: oklch(0.26 0 0);
-  --input: oklch(0.24 0 0);
-  --ring: oklch(0.6 0.2 255);
+  --background: #202020;
+  --foreground: #ffffff;
+  --layer: #3a3a3a4d;
+  --card: #ffffff0d;
+  --card-foreground: #ffffff;
+  --popover: #2c2c2c;
+  --popover-foreground: #ffffff;
+  --primary: #60cdff;
+  --primary-foreground: #000000;
+  --secondary: #ffffff0f;
+  --secondary-foreground: #ffffff;
+  --muted: #ffffff0f;
+  --muted-foreground: #ffffffc8;
+  --accent: #ffffff0f;
+  --accent-foreground: #ffffff;
+  --destructive: #c42b1c;
+  --destructive-foreground: #ffffff;
+  --border: #ffffff14;
+  --input: #ffffff0f;
+  --ring: #60cdff;
+  --control: #ffffff0f;
+  --control-hover: #ffffff15;
+  --control-border: #ffffff12;
+  --nav-hover: #ffffff0f;
+  --nav-selected: #ffffff0f;
+  --overlay: #0000008c;
 
-  /* Status colors */
-  --status-ok: oklch(0.65 0.18 145);
-  --status-warn: oklch(0.78 0.18 55);
-  --status-error: oklch(0.62 0.22 27);
+  --status-ok: #6ccb5f;
+  --status-warn: #fce100;
+  --status-error: #ff99a4;
+  --status-info: #60cdff;
+  --infobar-info: #2b2b2b;
+  --infobar-ok: #393d1b;
+  --infobar-warn: #433519;
+  --infobar-error: #442726;
+}
 
-  /* Sidebar/panel */
-  --sidebar: oklch(0.165 0 0);
-  --sidebar-foreground: oklch(0.93 0 0);
-  --sidebar-border: oklch(0.26 0 0);
-
-  /* Metric card */
-  --metric-bg: oklch(0.2 0 0);
+/* Mica is painted by DWM behind the webview; the page must not cover it. */
+.mica {
+  --background: transparent;
 }
 
 @theme inline {
-  --font-sans: 'Segoe UI Variable Text', Aptos, 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-display:
+    'Segoe UI Variable Display', 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Mono', Consolas, monospace;
+  --font-icons: 'Segoe Fluent Icons', 'Segoe MDL2 Assets';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-layer: var(--layer);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -93,25 +111,52 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-control: var(--control);
+  --color-control-hover: var(--control-hover);
+  --color-control-border: var(--control-border);
+  --color-nav-hover: var(--nav-hover);
+  --color-nav-selected: var(--nav-selected);
+  --color-overlay: var(--overlay);
   --color-status-ok: var(--status-ok);
   --color-status-warn: var(--status-warn);
   --color-status-error: var(--status-error);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-metric-bg: var(--metric-bg);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-status-info: var(--status-info);
+  --color-infobar-info: var(--infobar-info);
+  --color-infobar-ok: var(--infobar-ok);
+  --color-infobar-warn: var(--infobar-warn);
+  --color-infobar-error: var(--infobar-error);
+  --color-caption-close: var(--caption-close);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans text-sm antialiased;
+    overflow: hidden;
+    cursor: default;
+    /* Desktop chrome is not a document: only form fields and explicit opt-ins select. */
+    user-select: none;
+  }
+  input,
+  textarea,
+  .selectable {
+    user-select: text;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
   ::-webkit-scrollbar {
     width: 6px;
@@ -121,6 +166,14 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    @apply bg-muted-foreground/40 rounded-full;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

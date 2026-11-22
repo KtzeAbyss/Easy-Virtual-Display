@@ -7,6 +7,7 @@ import {
   type ApplyAdminConfigInput,
   type EasyVirtualDisplayBridge,
   type EffectiveLanguage,
+  type ProjectLink,
   type SetDisplayModeInput,
   type SnapshotListener,
   type Unsubscribe
@@ -68,6 +69,8 @@ export function createTauriBridge(): EasyVirtualDisplayBridge {
     openDisplaySettings: () => invoke<void>('open_display_settings'),
     showMainWindow: () => invoke<void>('show_main_window'),
     openDisplayViewer: (index: number) => invoke<void>('open_display_viewer', { index }),
-    closeDisplayViewer: (index: number) => invoke<void>('close_display_viewer', { index })
+    closeDisplayViewer: (index: number) => invoke<void>('close_display_viewer', { index }),
+    applyWindowMaterial: (dark: boolean) => invoke<boolean>('apply_window_material', { dark }),
+    openProjectLink: (link: ProjectLink) => invoke<void>('open_project_link', { link })
   }
 }
